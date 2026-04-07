@@ -1,26 +1,151 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-inter: "Inter", sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    font-family: var(--font-inter), sans-serif;
+    background-color: #0f172a;
+    color: #f8fafc;
+    -webkit-tap-highlight-color: transparent;
+    font-size: 16px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .glass-card {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.4s ease;
+  }
+  .sniper-active-pulse {
+    border: 2px solid #ef4444 !important;
+    animation: tactical-border-pulse 2s infinite;
+    background: rgba(69, 10, 10, 0.4) !important;
+  }
+  .perfect-buy-glow {
+    border: 2px solid #10b981 !important;
+    box-shadow: 0 0 40px rgba(16, 185, 129, 0.4);
+    background: rgba(6, 78, 59, 0.3) !important;
+  }
+  .high-prob-glow {
+    border: 2px solid #34d399 !important;
+    box-shadow: 0 0 20px rgba(52, 211, 153, 0.2);
+  }
+  .indicator-dot {
+    height: 12px;
+    width: 12px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+  .loading-pulse {
+    animation: pulse 1.5s infinite;
+  }
+  .recommendation-badge {
+    padding: 6px 14px;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .allocation-pill {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 900;
+  }
+  .input-tactical {
+    background: rgba(15, 23, 42, 0.9);
+    border: 2px solid rgba(99, 102, 241, 0.2);
+    color: #fff;
+    font-weight: 900;
+    text-align: center;
+    border-radius: 20px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: var(--font-inter), monospace;
+  }
+  .input-tactical:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 25px rgba(99, 102, 241, 0.3);
+    outline: none;
+    background: #0f172a;
+  }
+  .input-tactical:disabled {
+    background: rgba(30, 41, 59, 0.2);
+    border-color: #10b981;
+    color: #10b981;
+    cursor: not-allowed;
+    opacity: 1;
+  }
+  .locked-glow {
+    border-color: #10b981 !important;
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.15);
+  }
+  .btn-master {
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    font-weight: 900;
+  }
+  .btn-master:active {
+    transform: scale(0.95);
+  }
+  .history-table th {
+    position: sticky;
+    top: 0;
+    background: #1e293b;
+    text-align: left;
+    padding: 16px 12px;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 700;
+    z-index: 10;
+  }
+  .history-table td {
+    padding: 16px 12px;
+    font-size: 0.95rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  .status-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 900;
+    display: inline-block;
+    white-space: nowrap;
+  }
+}
+
+@keyframes tactical-border-pulse {
+  0% {
+    border-color: #ef4444;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    border-color: #f59e0b;
+    box-shadow: 0 0 25px rgba(245, 158, 11, 0.5);
+  }
+  100% {
+    border-color: #ef4444;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 }
