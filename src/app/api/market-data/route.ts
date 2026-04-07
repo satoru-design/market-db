@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic'; // Prevent Vercel edge caching
+
 export async function GET() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
