@@ -4,6 +4,19 @@ import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
+export const metadata: Metadata = {
+  title: 'Market Risk Pro - Alpha Terminal (v9.5 AI Optimized)',
+  description: 'AI Optimized Market Risk Dashboard',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'MarketRiskPro',
+    startupImage: [
+      '/apple-icon.jpg',
+    ],
+  },
+};
+
 export default function RootLayout({
   children,
 }: {
@@ -12,7 +25,6 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <head>
-        <title>Market Risk Pro - Alpha Terminal (v9.5 AI Optimized)</title>
       </head>
       <body className={`${inter.variable} antialiased`}>
         {children}
