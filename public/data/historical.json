@@ -1,0 +1,37 @@
+{
+  "events": [
+    { "date": "2024-08-05", "intensity": "PERFECT", "fg": 17, "vix_peak": 38.5, "skew_peak": 145, "context": "植田ショック" },
+    { "date": "2024-04-19", "intensity": "HIGH", "fg": 31, "vix_peak": 21.2, "skew_peak": 138, "context": "テック株調整" },
+    { "date": "2022-10-13", "intensity": "PERFECT", "fg": 15, "vix_peak": 33.8, "skew_peak": 119, "context": "CPIパニック" },
+    { "date": "2022-06-17", "intensity": "PERFECT", "fg": 6, "vix_peak": 34.0, "skew_peak": 117, "context": "FRB75bp利上げ" },
+    { "date": "2022-01-24", "intensity": "HIGH", "fg": 22, "vix_peak": 38.9, "skew_peak": 120, "context": "テック株急落" },
+    { "date": "2020-03-23", "intensity": "PERFECT", "fg": 2, "vix_peak": 82.7, "skew_peak": 110, "context": "コロナショック" },
+    { "date": "2018-12-24", "intensity": "PERFECT", "fg": 5, "vix_peak": 36.1, "skew_peak": 115, "context": "クリスマスイブ底" },
+    { "date": "2018-02-08", "intensity": "HIGH", "fg": 12, "vix_peak": 50.3, "skew_peak": 130, "context": "VIXショック" },
+    { "date": "2016-02-11", "intensity": "PERFECT", "fg": 10, "vix_peak": 28.1, "skew_peak": 115, "context": "原油安・中国懸念" },
+    { "date": "2015-08-25", "intensity": "PERFECT", "fg": 8, "vix_peak": 40.7, "skew_peak": 119, "context": "チャイナショック" }
+  ],
+  "current_prices": {
+    "SPXL": 175.0,
+    "TQQQ": 92.0,
+    "QQQ": 540.0,
+    "VTI": 305.0,
+    "VT": 130.0,
+    "GLDM": 78.0,
+    "IAU": 79.0,
+    "VYM": 138.0,
+    "TLT": 88.0
+  },
+  "event_prices": {
+    "2024-08-05": { "SPXL": 105.0, "TQQQ": 50.0, "QQQ": 425.0, "VTI": 250.0, "VT": 105.0, "GLDM": 70.0, "IAU": 72.0, "VYM": 120.0, "TLT": 92.0 },
+    "2024-04-19": { "SPXL": 115.0, "TQQQ": 56.0, "QQQ": 440.0, "VTI": 252.0, "VT": 107.0, "GLDM": 65.0, "IAU": 67.0, "VYM": 117.0, "TLT": 89.0 },
+    "2022-10-13": { "SPXL": 50.0, "TQQQ": 18.0, "QQQ": 260.0, "VTI": 180.0, "VT": 82.0, "GLDM": 52.0, "IAU": 54.0, "VYM": 100.0, "TLT": 95.0 },
+    "2022-06-17": { "SPXL": 55.0, "TQQQ": 22.0, "QQQ": 270.0, "VTI": 185.0, "VT": 86.0, "GLDM": 55.0, "IAU": 57.0, "VYM": 102.0, "TLT": 110.0 },
+    "2022-01-24": { "SPXL": 110.0, "TQQQ": 60.0, "QQQ": 350.0, "VTI": 230.0, "VT": 100.0, "GLDM": 53.0, "IAU": 55.0, "VYM": 110.0, "TLT": 140.0 },
+    "2020-03-23": { "SPXL": 15.0, "TQQQ": 5.0, "QQQ": 175.0, "VTI": 110.0, "VT": 60.0, "GLDM": 47.0, "IAU": 49.0, "VYM": 60.0, "TLT": 165.0 },
+    "2018-12-24": { "SPXL": 24.0, "TQQQ": 10.0, "QQQ": 145.0, "VTI": 115.0, "VT": 60.0, "GLDM": 24.0, "IAU": 25.0, "VYM": 75.0, "TLT": 121.0 },
+    "2018-02-08": { "SPXL": 38.0, "TQQQ": 18.0, "QQQ": 155.0, "VTI": 130.0, "VT": 70.0, "GLDM": 25.0, "IAU": 26.0, "VYM": 80.0, "TLT": 122.0 },
+    "2016-02-11": { "SPXL": 22.0, "TQQQ": 8.0, "QQQ": 95.0, "VTI": 95.0, "VT": 53.0, "GLDM": 25.0, "IAU": 26.0, "VYM": 65.0, "TLT": 132.0 },
+    "2015-08-25": { "SPXL": 35.0, "TQQQ": 14.0, "QQQ": 105.0, "VTI": 100.0, "VT": 58.0, "GLDM": 22.0, "IAU": 22.5, "VYM": 70.0, "TLT": 122.0 }
+  }
+}
