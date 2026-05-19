@@ -54,7 +54,7 @@ export default function TerminalPage() {
         }
       } catch (err) {
         console.error("Failed to fetch market data", err);
-        setStrategyMessage("データ取得失敗。手動で数値を入力してください。");
+        setStrategyMessage("データ取得失敗。しばらく待ってリロードしてください。");
       } finally {
         setIsLoading(false);
       }
@@ -83,7 +83,7 @@ export default function TerminalPage() {
       });
       const json = await res.json();
       setAiInsight(json.insight || 'AI分析の取得に失敗しました。');
-    } catch (err) {
+    } catch {
       setAiInsight('ネットワークエラーが発生しました。');
     } finally {
       setIsAnalyzing(false);
