@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Gauge, Flame, TrendingDown, Cpu, ShieldCheck, Wallet, BrainCircuit, History, Loader2 } from 'lucide-react';
 import { portfolioData } from '@/data/portfolio';
 import { detectPhase, type Phase } from '@/lib/signals';
+import { ScenarioCards } from '@/components/ScenarioCards';
 
 interface MarketData {
   fg: string;
@@ -182,6 +183,12 @@ export default function TerminalPage() {
             <div className="text-xl md:text-3xl font-black mb-2 text-slate-200 tracking-tighter">{getDecisionText()}</div>
             <div className="text-xs md:text-sm text-slate-400 leading-snug italic font-black uppercase opacity-60 tracking-widest">Awaiting Command...</div>
           </div>
+        </div>
+
+        {/* SCENARIO PROJECTION */}
+        <div className="mt-12">
+          <h2 className="text-sm font-black text-indigo-400 uppercase tracking-[0.3em] pl-2 mb-4">Scenario Projection</h2>
+          <ScenarioCards current={status} />
         </div>
       </div>
 
