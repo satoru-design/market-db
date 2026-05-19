@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
 import { computeReturns, type HistoricalData } from '@/lib/backtest';
+import historical from '../../../../public/data/historical.json';
 
 const TICKERS = ['SPXL', 'TQQQ', 'QQQ', 'VTI', 'VT', 'GLDM', 'VYM', 'TLT'];
 
+export const dynamic = 'force-static';
+
 export async function GET() {
-  const filePath = path.join(process.cwd(), 'public/data/historical.json');
-  const raw = await fs.readFile(filePath, 'utf-8');
-  const data = JSON.parse(raw) as HistoricalData;
+  const data = historical as HistoricalData;
   const results = TICKERS.map((t) => computeReturns(data, t));
   return NextResponse.json(results);
 }

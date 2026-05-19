@@ -28,7 +28,7 @@ export function BacktestPanel() {
             {results.map(r => (
               <tr key={r.ticker} className="border-t border-white/5">
                 <td className="p-3 font-black text-indigo-300">{r.ticker}</td>
-                <td className={`p-3 text-right font-mono font-bold ${r.avgReturnPct > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                <td className={`p-3 text-right font-mono font-bold ${r.byEvent.length === 0 ? 'text-slate-500' : r.avgReturnPct > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   {(r.avgReturnPct * 100).toFixed(1)}%
                 </td>
                 <td className="p-3 text-right font-mono">{(r.winRate * 100).toFixed(0)}%</td>
