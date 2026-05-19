@@ -44,7 +44,14 @@ export default function TerminalPage() {
           gold: json.gold,
           silver: json.silver
         });
-        setStrategyMessage("自動データ取得完了。数値を手動で修正できます。「この数値で確定・AI分析開始」ボタンを押してください。");
+        setStrategyMessage("自動データ取得完了。AI Briefing を更新して市場フェーズを確認してください。");
+
+        const fgN = parseFloat(json.fg);
+        const vixN = parseFloat(json.vix);
+        const skewN = parseFloat(json.skew);
+        if (!Number.isNaN(fgN) && !Number.isNaN(vixN) && !Number.isNaN(skewN)) {
+          setStatus(detectPhase({ fg: fgN, vix: vixN, skew: skewN }));
+        }
       } catch (err) {
         console.error("Failed to fetch market data", err);
         setStrategyMessage("データ取得失敗。手動で数値を入力してください。");
@@ -56,20 +63,16 @@ export default function TerminalPage() {
   }, []);
 
   const handleAnalyze = async () => {
-    if (!data.fg || !data.vix || !data.skew || data.fg === "--" || data.vix === "--.--" || data.skew === "---") {
-      alert("全ての数値を入力・確認してから確定ボタンを押してください。");
-      return;
-    }
-
-    setStrategyMessage("データ取得完了。AI戦術分析に移行します...");
+    setStrategyMessage("AI Briefing を更新中...");
     setIsAnalyzing(true);
 
     const fgVal = parseFloat(data.fg);
     const vixVal = parseFloat(data.vix);
     const skewVal = parseFloat(data.skew);
 
-    const newStatus = detectPhase({ fg: fgVal, vix: vixVal, skew: skewVal });
-    setStatus(newStatus);
+    if (!Number.isNaN(fgVal) && !Number.isNaN(vixVal) && !Number.isNaN(skewVal)) {
+      setStatus(detectPhase({ fg: fgVal, vix: vixVal, skew: skewVal }));
+    }
 
     // Fetch AI insight
     try {
@@ -135,30 +138,30 @@ export default function TerminalPage() {
           </div>
         </div>
 
-        {/* UNIFIED INPUT AREA */}
+        {/* AUTO-FETCHED INDICATORS */}
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="glass-card rounded-3xl p-8 flex flex-col items-center justify-center space-y-4">
               <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Gauge className="w-4 h-4" /> Fear & Greed</h2>
-              <input type="number" placeholder={isLoading ? "Loading..." : "--"} value={data.fg} onChange={(e) => setData({...data, fg: e.target.value})} className="input-tactical w-full py-10 text-6xl shadow-inner" />
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Enter Score (0-100)</p>
+              <div className="text-6xl font-black text-white py-6">{data.fg || '--'}</div>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">CNN Auto-fetch</p>
             </div>
             <div className="glass-card rounded-3xl p-8 flex flex-col items-center justify-center space-y-4">
               <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Flame className="w-4 h-4" /> VIX Index</h2>
-              <input type="number" step="0.01" placeholder={isLoading ? "Loading..." : "--.--"} value={data.vix} onChange={(e) => setData({...data, vix: e.target.value})} className="input-tactical w-full py-10 text-6xl shadow-inner" />
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Enter Value (e.g. 25.24)</p>
+              <div className="text-6xl font-black text-white py-6">{data.vix || '--.--'}</div>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Yahoo Finance Auto-fetch</p>
             </div>
             <div className="glass-card rounded-3xl p-8 flex flex-col items-center justify-center space-y-4">
               <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><TrendingDown className="w-4 h-4" /> Skew Index</h2>
-              <input type="number" placeholder={isLoading ? "Loading..." : "---"} value={data.skew} onChange={(e) => setData({...data, skew: e.target.value})} className="input-tactical w-full py-10 text-6xl shadow-inner" />
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Enter Index (e.g. 145)</p>
+              <div className="text-6xl font-black text-white py-6">{data.skew || '---'}</div>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Yahoo Finance Auto-fetch</p>
             </div>
           </div>
 
           <div className="flex justify-center mt-6 pt-4">
             <button onClick={handleAnalyze} className="btn-master bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] border border-indigo-400/50 flex items-center gap-3 w-full md:w-auto text-sm md:text-base">
               <Cpu className="w-5 h-5" />
-              この数値で確定・AI分析開始
+              AI Briefing を更新
             </button>
           </div>
         </div>
