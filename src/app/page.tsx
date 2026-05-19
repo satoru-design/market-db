@@ -5,6 +5,7 @@ import { Gauge, Flame, TrendingDown, Cpu, ShieldCheck, Wallet, BrainCircuit, His
 import { portfolioData } from '@/data/portfolio';
 import { detectPhase, type Phase } from '@/lib/signals';
 import { ScenarioCards } from '@/components/ScenarioCards';
+import { BacktestPanel } from '@/components/BacktestPanel';
 
 interface MarketData {
   fg: string;
@@ -295,6 +296,8 @@ export default function TerminalPage() {
           </div>
         </div>
       </div>
+
+      <BacktestPanel />
 
       {/* HISTORICAL TACTICAL DATA */}
       <div className="max-w-7xl mx-auto pb-24">
