@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Gauge, Flame, TrendingDown, Cpu, ShieldCheck, Wallet, BrainCircuit, History, Loader2 } from 'lucide-react';
 import { portfolioData } from '@/data/portfolio';
+import { detectPhase } from '@/lib/signals';
 
 interface MarketData {
   fg: string;
@@ -62,29 +63,14 @@ export default function TerminalPage() {
 
     setStrategyMessage("データ取得完了。AI戦術分析に移行します...");
     setIsAnalyzing(true);
-    
-    // Calculate status
+
     const fgVal = parseFloat(data.fg);
     const vixVal = parseFloat(data.vix);
     const skewVal = parseFloat(data.skew);
-    
-    const buySignals = [
-      { name: 'F&G', active: fgVal <= 30 },
-      { name: 'VIX', active: vixVal >= 28 },
-      { name: 'Skew', active: skewVal <= 118 }
-    ];
-    
-    const actCount = buySignals.filter(s => s.active).length;
-    const isHeat = fgVal >= 75;
 
-    let newStatus = "NEUTRAL";
-    if (isHeat) newStatus = "HEAT";
-    else if (actCount === 3) newStatus = "PERFECT";
-    else if (actCount >= 2) newStatus = "HIGH";
-    else if (actCount === 1) newStatus = "WATCH";
-
+    const newStatus = detectPhase({ fg: fgVal, vix: vixVal, skew: skewVal });
     setStatus(newStatus);
-    
+
     // Fetch AI insight
     try {
       const res = await fetch('/api/alpha-insight', {
