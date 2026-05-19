@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Gauge, Flame, TrendingDown, Cpu, ShieldCheck, Wallet, BrainCircuit, History, Loader2 } from 'lucide-react';
 import { portfolioData } from '@/data/portfolio';
-import { detectPhase } from '@/lib/signals';
+import { detectPhase, type Phase } from '@/lib/signals';
 
 interface MarketData {
   fg: string;
@@ -19,7 +19,7 @@ export default function TerminalPage() {
   const [data, setData] = useState<MarketData>({
     fg: '', vix: '', skew: '', yield: null, dxy: null, gold: null, silver: null
   });
-  const [status, setStatus] = useState("NEUTRAL");
+  const [status, setStatus] = useState<Phase>("NEUTRAL");
   const [strategyMessage, setStrategyMessage] = useState("データ取得中です...");
   const [aiInsight, setAiInsight] = useState("データ取得完了後、AIが市場を統合スキャンします。");
   const [isLoading, setIsLoading] = useState(true);
@@ -228,7 +228,7 @@ export default function TerminalPage() {
                     else { act = "HOLD"; col = "bg-slate-500"; pct = "自動積立"; }
                 }
 
-                const strat = cat.strategy ? cat.strategy[status as keyof typeof cat.strategy] || cat.strategy["NEUTRAL"] : { budget: "--", action: "定期積立を継続し、相場変動を静観。" };
+                const strat = cat.strategy ? cat.strategy[status] || cat.strategy["NEUTRAL"] : { budget: "--", action: "定期積立を継続し、相場変動を静観。" };
 
                 return (
                   <tr key={cat.id} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
