@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Gauge, Flame, TrendingDown, Cpu, ShieldCheck, Wallet, BrainCircuit, History, Loader2 } from 'lucide-react';
+import { Gauge, Flame, TrendingDown, ShieldCheck, Wallet, History } from 'lucide-react';
 import { portfolioData } from '@/data/portfolio';
 import { detectPhase, type Phase } from '@/lib/signals';
 import { ScenarioCards } from '@/components/ScenarioCards';
 import { BacktestPanel } from '@/components/BacktestPanel';
 import { ProfilePanel } from '@/components/ProfilePanel';
+import { InsightTabs } from '@/components/InsightTabs';
 
 interface MarketData {
   fg: string;
@@ -24,9 +25,7 @@ export default function TerminalPage() {
   });
   const [status, setStatus] = useState<Phase>("NEUTRAL");
   const [strategyMessage, setStrategyMessage] = useState("データ取得中です...");
-  const [aiInsight, setAiInsight] = useState("データ取得完了後、AIが市場を統合スキャンします。");
   const [isLoading, setIsLoading] = useState(true);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -64,34 +63,6 @@ export default function TerminalPage() {
     }
     fetchData();
   }, []);
-
-  const handleAnalyze = async () => {
-    setStrategyMessage("AI Briefing を更新中...");
-    setIsAnalyzing(true);
-
-    const fgVal = parseFloat(data.fg);
-    const vixVal = parseFloat(data.vix);
-    const skewVal = parseFloat(data.skew);
-
-    if (!Number.isNaN(fgVal) && !Number.isNaN(vixVal) && !Number.isNaN(skewVal)) {
-      setStatus(detectPhase({ fg: fgVal, vix: vixVal, skew: skewVal }));
-    }
-
-    // Fetch AI insight
-    try {
-      const res = await fetch('/api/alpha-insight', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fg: fgVal, vix: vixVal, skew: skewVal })
-      });
-      const json = await res.json();
-      setAiInsight(json.insight || 'AI分析の取得に失敗しました。');
-    } catch {
-      setAiInsight('ネットワークエラーが発生しました。');
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
 
   const gsRatio = (data.gold && data.silver) ? (data.gold / data.silver) : null;
   const metalTargetName = gsRatio ? (gsRatio > 85 ? "GOLD" : gsRatio < 75 ? "SILVER" : "NEUTRAL") : "--";
@@ -161,12 +132,14 @@ export default function TerminalPage() {
             </div>
           </div>
 
-          <div className="flex justify-center mt-6 pt-4">
-            <button onClick={handleAnalyze} className="btn-master bg-indigo-600 hover:bg-indigo-500 text-white px-10 py-4 rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)] border border-indigo-400/50 flex items-center gap-3 w-full md:w-auto text-sm md:text-base">
-              <Cpu className="w-5 h-5" />
-              AI Briefing を更新
-            </button>
-          </div>
+          <InsightTabs indicators={(() => {
+            const fg = parseFloat(data.fg as string);
+            const vix = parseFloat(data.vix as string);
+            const skew = parseFloat(data.skew as string);
+            return !Number.isNaN(fg) && !Number.isNaN(vix) && !Number.isNaN(skew)
+              ? { fg, vix, skew }
+              : null;
+          })()} />
         </div>
 
         {/* STRATEGY SECTION */}
@@ -208,7 +181,7 @@ export default function TerminalPage() {
               </tr>
             </thead>
             <tbody className="text-slate-200 text-sm">
-              {status === "NEUTRAL" && !isAnalyzing && data.fg === '' ? (
+              {status === "NEUTRAL" && data.fg === '' ? (
                  <tr><td colSpan={4} className="p-12 text-center text-slate-500 italic font-bold uppercase opacity-40">データを取得後、AIが戦略を更新します。</td></tr>
               ) : portfolioData.map(cat => {
                 let act = "HOLD", col = "bg-slate-700", pct = "0%";
@@ -283,19 +256,6 @@ export default function TerminalPage() {
           <div className="glass-card rounded-2xl p-6 text-center"><span className="text-[10px] text-slate-500 block uppercase mb-2 font-black">Metal Target</span><div className="text-xl font-black text-indigo-400 uppercase tracking-tighter">{metalTargetName}</div></div>
         </div>
 
-        <div className="space-y-4">
-          <h2 className="text-sm font-black text-indigo-400 uppercase tracking-[0.3em] pl-2 flex items-center gap-3"><BrainCircuit className="w-4 h-4" /> AI Daily Alpha Insight</h2>
-          <div className="glass-card rounded-3xl p-8 border-l-8 border-l-indigo-600 shadow-2xl">
-            <div className="text-base md:text-lg text-slate-200 font-bold italic leading-relaxed">
-              {isAnalyzing ? (
-                <div className="flex items-center gap-3 text-indigo-400 italic">
-                  <Loader2 className="animate-spin w-5 h-5" />
-                  AI分析中... (市場データを精査しています)
-                </div>
-              ) : aiInsight}
-            </div>
-          </div>
-        </div>
       </div>
 
       <BacktestPanel />
