@@ -1,6 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-const PUBLIC_PATHS = ['/api/cron/alert']; // Cron uses its own auth
+const PUBLIC_PATHS = [
+  '/api/cron/alert',     // Cron uses its own auth
+  '/api/market-data',    // public market data; cron route fetches this internally
+];
 
 export function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
