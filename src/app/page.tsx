@@ -6,6 +6,7 @@ import { portfolioData } from '@/data/portfolio';
 import { detectPhase, type Phase } from '@/lib/signals';
 import { ScenarioCards } from '@/components/ScenarioCards';
 import { BacktestPanel } from '@/components/BacktestPanel';
+import { ProfilePanel } from '@/components/ProfilePanel';
 
 interface MarketData {
   fg: string;
@@ -317,6 +318,8 @@ export default function TerminalPage() {
           </table>
         </div>
       </div>
+
+      <ProfilePanel />
     </div>
   );
 }
