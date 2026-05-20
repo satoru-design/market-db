@@ -29,7 +29,7 @@ export function InsightTabs({ indicators }: { indicators: { fg: number; vix: num
     };
     fetchInsight('claude');
     fetchInsight('gemini');
-  }, [indicators?.fg, indicators?.vix, indicators?.skew]);
+  }, [indicators]);
 
   return (
     <div className="glass-card rounded-3xl p-8 border-l-8 border-l-indigo-600">

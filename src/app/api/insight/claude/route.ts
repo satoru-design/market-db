@@ -13,8 +13,7 @@ export async function POST(request: Request) {
   });
 
   const text = msg.content
-    .filter((b) => b.type === 'text')
-    .map((b: any) => 'text' in b ? b.text : '')
+    .map((b) => (b.type === 'text' ? b.text : ''))
     .join('');
 
   return NextResponse.json({ insight: text || 'Claude分析の取得に失敗しました。' });
