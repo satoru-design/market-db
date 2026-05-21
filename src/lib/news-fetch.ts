@@ -5,8 +5,12 @@ export type NewsItem = {
   link: string;
 };
 
-const YAHOO_QUERIES = ['日経平均', 'ダウ', 'ナスダック', 'FRB'];
-const REUTERS_RSS = 'https://feeds.reuters.com/reuters/businessNews';
+const YAHOO_QUERIES = ['Nikkei', 'Dow Jones', 'Nasdaq', 'Federal Reserve', 'TOPIX'];
+
+const GOOGLE_NEWS_URLS = [
+  { url: 'https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=ja&gl=JP&ceid=JP:ja', publisher: 'GoogleNews/JP' },
+  { url: 'https://news.google.com/rss/search?q=stock+market&hl=en-US&gl=US&ceid=US:en', publisher: 'GoogleNews/US' },
+];
 
 export function normalizeTitle(s: string): string {
   return s
@@ -58,37 +62,43 @@ async function fetchYahooQuery(query: string): Promise<NewsItem[]> {
   }
 }
 
-async function fetchReutersRss(): Promise<NewsItem[]> {
-  try {
-    const res = await fetch(REUTERS_RSS, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-      next: { revalidate: 0 },
-    });
-    const text = await res.text();
-    const items: NewsItem[] = [];
-    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-    let match;
-    while ((match = itemRegex.exec(text)) !== null) {
-      const block = match[1];
-      const title = /<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/.exec(block)?.[1]?.trim() ?? '';
-      const link = /<link>([\s\S]*?)<\/link>/.exec(block)?.[1]?.trim() ?? '';
-      const pubDate = /<pubDate>([\s\S]*?)<\/pubDate>/.exec(block)?.[1]?.trim() ?? '';
-      const publishedAt = pubDate ? Math.floor(new Date(pubDate).getTime() / 1000) : 0;
-      if (title) items.push({ title, publisher: 'Reuters', publishedAt, link });
-      if (items.length >= 10) break;
+async function fetchGoogleNewsRss(): Promise<NewsItem[]> {
+  const out: NewsItem[] = [];
+  for (const src of GOOGLE_NEWS_URLS) {
+    try {
+      const res = await fetch(src.url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+        redirect: 'follow',
+        next: { revalidate: 0 },
+      });
+      const text = await res.text();
+      const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+      let match;
+      let count = 0;
+      while ((match = itemRegex.exec(text)) !== null && count < 8) {
+        const block = match[1];
+        const title = /<title>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/.exec(block)?.[1]?.trim() ?? '';
+        const link = /<link>([\s\S]*?)<\/link>/.exec(block)?.[1]?.trim() ?? '';
+        const pubDate = /<pubDate>([\s\S]*?)<\/pubDate>/.exec(block)?.[1]?.trim() ?? '';
+        const publishedAt = pubDate ? Math.floor(new Date(pubDate).getTime() / 1000) : 0;
+        if (title) {
+          out.push({ title, publisher: src.publisher, publishedAt, link });
+          count++;
+        }
+      }
+    } catch {
+      // skip this source on failure
     }
-    return items;
-  } catch {
-    return [];
   }
+  return out;
 }
 
 export async function fetchAllNews(nowSec: number = Math.floor(Date.now() / 1000)): Promise<NewsItem[]> {
-  const [yahooResults, reuters] = await Promise.all([
+  const [yahooResults, googleNews] = await Promise.all([
     Promise.all(YAHOO_QUERIES.map(fetchYahooQuery)),
-    fetchReutersRss(),
+    fetchGoogleNewsRss(),
   ]);
-  const all = [...yahooResults.flat(), ...reuters];
+  const all = [...yahooResults.flat(), ...googleNews];
   return dedupeNews(filterRecent24h(all, nowSec)).slice(0, 15);
 }
 
