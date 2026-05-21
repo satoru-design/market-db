@@ -6,6 +6,7 @@ export type Profile = {
   maxSingleAsset: number;
   maxDrawdownPct: number;
   adoptedScenario: 'worse' | 'current' | 'better';
+  holdings: string;
 };
 
 const DEFAULT: Profile = {
@@ -14,6 +15,7 @@ const DEFAULT: Profile = {
   maxSingleAsset: 200000,
   maxDrawdownPct: 30,
   adoptedScenario: 'current',
+  holdings: '',
 };
 
 const KEY = 'profile:satoru';
