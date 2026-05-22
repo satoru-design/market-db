@@ -13,10 +13,12 @@ describe('buildMorningPrompt', () => {
     expect(out).toContain('F&G 60 / VIX 18');
     expect(out).toContain('1. (Reuters) Test headline');
     expect(out).toContain('SPXL 50株');
-    expect(out).toContain('250文字以内');
+    expect(out).toContain('300文字以内');
     expect(out).toContain('📊 振り返り');
     expect(out).toContain('🔮 今日');
     expect(out).toContain('💡 持ち株');
+    expect(out).toContain('Slack mrkdwn');
+    expect(out).toContain('段落分け');
   });
 
   it('holdings 空文字でも壊れず、一般配分提案を促す文言を含む', () => {
