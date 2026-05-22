@@ -19,6 +19,7 @@ describe('buildMorningPrompt', () => {
     expect(out).toContain('💡 持ち株');
     expect(out).toContain('Slack mrkdwn');
     expect(out).toContain('段落分け');
+    expect(out).toContain('バッククォートで囲む');
   });
 
   it('holdings 空文字でも壊れず、一般配分提案を促す文言を含む', () => {
