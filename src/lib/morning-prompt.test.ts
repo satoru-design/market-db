@@ -18,7 +18,7 @@ describe('buildMorningPrompt', () => {
     expect(out).toContain('🔮 今日');
     expect(out).toContain('💡 持ち株');
     expect(out).toContain('Slack mrkdwn');
-    expect(out).toContain('段落分け');
+    expect(out).toContain('銘柄ごとに1行');
     expect(out).toContain('バッククォートで囲む');
   });
 
