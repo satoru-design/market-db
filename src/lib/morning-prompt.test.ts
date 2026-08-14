@@ -20,6 +20,8 @@ describe('buildMorningPrompt', () => {
     expect(out).toContain('Slack mrkdwn');
     expect(out).toContain('銘柄ごとに1行');
     expect(out).toContain('バッククォートで囲む');
+    expect(out).toContain('継続積立方針');
+    expect(out).toContain('積立◎');
   });
 
   it('holdings 空文字でも壊れず、一般配分提案を促す文言を含む', () => {
