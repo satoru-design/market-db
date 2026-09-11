@@ -4,6 +4,8 @@ import { fetchSnapshot, formatSnapshot } from '@/lib/market-snapshot';
 import { fetchAllNews, formatNews } from '@/lib/news-fetch';
 import { buildMorningPrompt } from '@/lib/morning-prompt';
 import { getProfile } from '@/lib/profile';
+import { detectPhase, buySignals } from '@/lib/signals';
+import { formatBuyAction } from '@/lib/buy-action';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -69,7 +71,27 @@ export async function GET(request: Request) {
       .map(b => (b.type === 'text' ? b.text : ''))
       .join('');
 
-    const slackText = `🌅 *${dateLabel} Morning Briefing*\n\n${body}\n\n📈 <${origin}/|Daily Briefing>`;
+    // 「今何を買うか」を毎朝そのまま実行できる形（ティッカー・金額・買い方）で添える
+    const fg = Number(md.fg);
+    const vix = Number(md.vix);
+    const skew = Number(md.skew);
+    let buyBlock = '';
+    if (!Number.isNaN(fg) && !Number.isNaN(vix) && !Number.isNaN(skew)) {
+      const ind = { fg, vix, skew };
+      buyBlock =
+        '\n\n' +
+        formatBuyAction(
+          detectPhase(ind),
+          {
+            monthlyBudget: profile.monthlyBudget,
+            cashPool: profile.cashPool,
+            maxSingleAsset: profile.maxSingleAsset,
+          },
+          { ...ind, signalsActive: buySignals(ind).filter(s => s.active).length },
+        );
+    }
+
+    const slackText = `🌅 *${dateLabel} Morning Briefing*\n\n${body}${buyBlock}\n\n📈 <${origin}/|Daily Briefing>`;
     await sendSlack(slackText);
 
     return NextResponse.json({ ok: true, dateLabel, bodyLength: body.length, newsCount: news.length });

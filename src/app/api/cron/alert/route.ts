@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
 import { detectAlerts } from '@/lib/alerts';
-import { detectPhase, type Phase } from '@/lib/signals';
+import { detectPhase, buySignals, type Phase } from '@/lib/signals';
+import { getProfile } from '@/lib/profile';
+import { formatBuyAction } from '@/lib/buy-action';
 
 const ALERT_LOCK_HOURS = 24;
 const PHASE_KEY = 'snapshot:lastPhase';
@@ -48,11 +50,24 @@ export async function GET(request: Request) {
   const fired: string[] = [];
   const secret = process.env.MARKET_DB_SECRET_KEY ?? '';
 
+  // フェーズ変化時は「今何を買うか」を具体アクション付きで添える
+  const profile = await getProfile();
+  const capital = {
+    monthlyBudget: profile.monthlyBudget,
+    cashPool: profile.cashPool,
+    maxSingleAsset: profile.maxSingleAsset,
+  };
+  const signalsActive = buySignals(ind).filter(s => s.active).length;
+
   for (const a of alerts) {
     const last = lastFired[a.key] ? new Date(lastFired[a.key]).getTime() : 0;
     if (now - last < ALERT_LOCK_HOURS * 60 * 60 * 1000) continue;
     const url = `${origin}/alert?event=${a.key}${secret ? `&key=${secret}` : ''}`;
-    await sendSlack(`🚨 ${a.title}\n${a.detail}\n📊 ${url}`);
+    let text = `🚨 ${a.title}\n${a.detail}\n📊 ${url}`;
+    if (a.key === 'phase_change') {
+      text += `\n\n${formatBuyAction(currentPhase, capital, { fg, vix, skew, signalsActive })}`;
+    }
+    await sendSlack(text);
     lastFired[a.key] = new Date(now).toISOString();
     fired.push(a.key);
   }
