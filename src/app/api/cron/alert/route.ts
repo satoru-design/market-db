@@ -53,7 +53,6 @@ export async function GET(request: Request) {
   // フェーズ変化時は「今何を買うか」を具体アクション付きで添える
   const profile = await getProfile();
   const capital = {
-    monthlyBudget: profile.monthlyBudget,
     cashPool: profile.cashPool,
     maxSingleAsset: profile.maxSingleAsset,
   };

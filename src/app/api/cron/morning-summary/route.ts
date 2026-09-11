@@ -83,7 +83,6 @@ export async function GET(request: Request) {
         formatBuyAction(
           detectPhase(ind),
           {
-            monthlyBudget: profile.monthlyBudget,
             cashPool: profile.cashPool,
             maxSingleAsset: profile.maxSingleAsset,
           },
