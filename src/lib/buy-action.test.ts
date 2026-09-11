@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatBuyAction, buildPlan, parseBudgetYen, type Capital } from './buy-action';
+import { formatBuyAction, buildPlan, parseBudgetYen, DEPRECATED_FUNDS, type Capital } from './buy-action';
 import { detectPhase, buySignals } from './signals';
 import { portfolioData } from '@/data/portfolio';
 
@@ -126,6 +126,24 @@ describe('リスクレール', () => {
     expect(formatBuyAction('HIGH', CAP)).toContain('一括禁止');
     expect(formatBuyAction('NEUTRAL', CAP)).not.toContain('一括禁止');
     expect(formatBuyAction('WATCH', CAP)).not.toContain('一括禁止');
+  });
+});
+
+describe('積立▲（集約対象）の投信を推奨しない', () => {
+  it('全フェーズの通知本文に▲銘柄が一切出てこない', () => {
+    for (const phase of ['HEAT', 'PERFECT', 'HIGH', 'WATCH', 'NEUTRAL'] as const) {
+      const out = formatBuyAction(phase, CAP);
+      for (const fund of DEPRECATED_FUNDS) {
+        expect(out, `${phase} に ${fund} が出ている`).not.toContain(fund);
+      }
+    }
+  });
+
+  it('◎/○ の投信は推奨に含まれる', () => {
+    const out = formatBuyAction('NEUTRAL', CAP);
+    for (const fund of ['オルカン', 'eMAXIS Slim S&P500', 'ニッセイNASDAQ100', '楽天SCHD', 'iTrustインド株式']) {
+      expect(out, `${fund} が推奨に無い`).toContain(fund);
+    }
   });
 });
 

@@ -58,16 +58,44 @@ const PHASE_LABEL: Record<Phase, string> = {
 
 // 買付対象の具体銘柄。ティッカーは米国ETF、fundsは投信の通称。
 // portfolio.ts の items を通知向けに絞ったもの。
+//
+// 投信は profile.holdings の積立タグ ◎/○ のものだけを推奨する。
+// ▲（重複・高コストなので集約したいと小池自身が判定したもの）は推奨しない。
+// 除外した▲: 楽天プラスS&P500 / 楽天プラスオルカン / 楽天VXUS / LOSA / 楽天VTI /
+//   米国株式これ1本 / 楽天プラスNASDAQ100 / iFreeNEXT NASDAQ100 / メガ10 /
+//   楽天米国VYM四半期 / 野村配当貴族 / 楽天JEPQ / 米国BDC / 豪州力 / 豪州リート /
+//   オーストラリア株式ファンド / eMAXISインド株式
 const INSTRUMENTS: Record<string, { tickers: string[]; funds: string[] }> = {
-  core: { tickers: ['VT', 'VTI'], funds: ['オルカン', '楽天プラスS&P500', 'eMAXIS Slim S&P500'] },
-  growth: { tickers: ['QQQ'], funds: ['ニッセイNASDAQ100', 'FANG+', 'メガ10', 'SOX'] },
-  value: { tickers: ['VIG', 'VYM', 'SCHD', 'JEPQ'], funds: ['楽天VYM', '楽天SCHD', '楽天JEPQ', '米国BDC'] },
+  core: { tickers: ['VT', 'VTI'], funds: ['オルカン(eMAXIS Slim)', 'eMAXIS Slim S&P500'] },
+  growth: { tickers: ['QQQ'], funds: ['ニッセイNASDAQ100', 'FANG+', 'ニッセイSOX'] },
+  value: { tickers: ['VIG', 'VYM', 'SCHD'], funds: ['楽天SCHD', '楽天VYM'] },
   defensive: { tickers: ['VHT', 'IXJ', 'ITA'], funds: [] },
-  emerging: { tickers: ['EFA', 'BHP', 'RIO'], funds: ['eMAXISインド株式', 'iTrustインド株式'] },
+  emerging: { tickers: ['EFA', 'BHP', 'RIO'], funds: ['iTrustインド株式', 'フランクリン豪州高配当'] },
   hedge: { tickers: ['IAU', 'GLDM', 'SLV'], funds: ['純金・銀・プラチナ積立'] },
   leverage: { tickers: ['SPXL', 'TQQQ'], funds: [] },
   pool: { tickers: [], funds: ['eMAXIS Slim国内債券', 'SBI全世界債券', '米ドル外貨預金'] },
 };
+
+// profile.holdings で「積立▲」= 集約対象と小池が判定した投信。通知で推奨してはいけない。
+export const DEPRECATED_FUNDS = [
+  '楽天プラスS&P500',
+  '楽天プラスオールカントリー',
+  '楽天VXUS',
+  'LOSA',
+  '楽天VTI',
+  '米国株式これ1本',
+  '楽天プラスNASDAQ-100',
+  'iFreeNEXT NASDAQ100',
+  'メガ10',
+  '楽天米国VYM',
+  '配当貴族',
+  '楽天JEPQ',
+  '米国BDC',
+  '豪州力',
+  '豪州リート',
+  'オーストラリア株式ファンド',
+  'eMAXISインド株式',
+];
 
 // 弾薬(Pool)をどれだけ投入するか。portfolio.ts の pool 戦略に対応。
 //  PERFECT = 「全額放出」 / HIGH = 「徐々に移行」 / それ以外 = 温存
