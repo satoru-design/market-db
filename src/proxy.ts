@@ -1,9 +1,17 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import {
+  MDB_COOKIE_NAME,
+  buildNextPath,
+  keyMatches,
+  mdbCookieOptions,
+} from '@/lib/auth-gate';
+import { renderUnlockPage } from '@/lib/unlock-page';
 
 const PUBLIC_PATHS = [
   '/api/cron/alert',
   '/api/cron/morning-summary',
   '/api/market-data',
+  '/api/unlock',
 ];
 
 export function proxy(request: NextRequest) {
@@ -16,26 +24,39 @@ export function proxy(request: NextRequest) {
   const secret = process.env.MARKET_DB_SECRET_KEY;
   if (!secret) return NextResponse.next(); // No secret configured -> fail open (dev mode)
 
-  const cookieKey = request.cookies.get('mdb_key')?.value;
-  if (cookieKey === secret) return NextResponse.next();
+  const cookieKey = request.cookies.get(MDB_COOKIE_NAME)?.value;
+  if (cookieKey && keyMatches(cookieKey, secret)) return NextResponse.next();
 
+  // 既存のブックマークや自動化が使う ?key= は従来どおり通す
   const queryKey = searchParams.get('key');
-  if (queryKey === secret) {
+  if (queryKey && keyMatches(queryKey, secret)) {
     const res = NextResponse.next();
-    res.cookies.set('mdb_key', secret, {
-      maxAge: 60 * 60 * 24 * 365,
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: true,
-    });
+    res.cookies.set(MDB_COOKIE_NAME, secret, mdbCookieOptions);
     return res;
   }
 
-  return new NextResponse('Forbidden', { status: 403 });
+  // API を叩いた時に HTML を返しても読めないので、そこは素の 403 のまま
+  if (pathname.startsWith('/api/')) {
+    return new NextResponse('Forbidden', { status: 403 });
+  }
+
+  return new NextResponse(
+    renderUnlockPage({
+      next: buildNextPath(pathname, searchParams),
+      invalid: searchParams.get('unlock') === 'invalid',
+    }),
+    {
+      status: 403,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        'cache-control': 'no-store',
+      },
+    },
+  );
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|manifest|.*\\.(?:jpg|jpeg|png|svg|ico|webmanifest)).*)',
+    '/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|manifest|.*\.(?:jpg|jpeg|png|svg|ico|webmanifest)).*)',
   ],
 };
