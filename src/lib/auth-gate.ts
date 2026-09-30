@@ -6,6 +6,10 @@
 export const MDB_COOKIE_NAME = 'mdb_key';
 export const MDB_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
+/** 総当たり対策。この回数を外したら窓が開くまで受け付けない。 */
+export const UNLOCK_MAX_ATTEMPTS = 10;
+export const UNLOCK_WINDOW_SEC = 600;
+
 export const mdbCookieOptions = {
   maxAge: MDB_COOKIE_MAX_AGE,
   httpOnly: true,

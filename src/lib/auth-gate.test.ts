@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildNextPath, escapeHtml, keyMatches, safeNextPath } from './auth-gate';
-import { renderUnlockPage } from './unlock-page';
+import { parseNotice, renderUnlockPage } from './unlock-page';
 
 describe('keyMatches', () => {
   it('完全一致だけ通す', () => {
@@ -58,12 +58,29 @@ describe('renderUnlockPage', () => {
   });
 
   it('間違えた時だけエラーを出す', () => {
-    const html = renderUnlockPage({ next: '/', invalid: true });
+    const html = renderUnlockPage({ next: '/', notice: 'invalid' });
     expect(html).toContain('鍵が違います');
+  });
+
+  it('回数超過は待つよう伝える', () => {
+    const html = renderUnlockPage({ next: '/', notice: 'locked' });
+    expect(html).toContain('回数が多すぎます');
   });
 
   it('next に仕込まれた HTML を埋め込まない', () => {
     const html = renderUnlockPage({ next: '/"><script>alert(1)</script>' });
     expect(html).not.toContain('<script>alert(1)</script>');
+  });
+});
+
+describe('parseNotice', () => {
+  it('知っている値だけ通す', () => {
+    expect(parseNotice('invalid')).toBe('invalid');
+    expect(parseNotice('locked')).toBe('locked');
+  });
+
+  it('知らない値と欠落は無視する', () => {
+    expect(parseNotice('<script>')).toBeUndefined();
+    expect(parseNotice(null)).toBeUndefined();
   });
 });

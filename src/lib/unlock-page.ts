@@ -1,20 +1,32 @@
 import { escapeHtml } from './auth-gate';
 
+export type UnlockNotice = 'invalid' | 'locked';
+
 type UnlockPageOptions = {
   /** 解錠後に戻る自サイト内のパス */
   next: string;
-  /** 直前の入力が間違っていた時に true */
-  invalid?: boolean;
+  /** 直前の入力に対して出す知らせ */
+  notice?: UnlockNotice;
 };
+
+const NOTICE_TEXT: Record<UnlockNotice, string> = {
+  invalid: '鍵が違います。もう一度入れてください。',
+  locked: '入力の回数が多すぎます。10分ほど置いてからお願いします。',
+};
+
+/** クエリの値から知らせを読む。知らない値は無視する。 */
+export function parseNotice(raw: string | null): UnlockNotice | undefined {
+  return raw === 'invalid' || raw === 'locked' ? raw : undefined;
+}
 
 /**
  * 鍵が無い時に出す 403 の画面。
  * 「なぜ開けないのか」と「次に何をすれば開くのか」を必ず書く。
  */
-export function renderUnlockPage({ next, invalid = false }: UnlockPageOptions): string {
+export function renderUnlockPage({ next, notice }: UnlockPageOptions): string {
   const nextValue = escapeHtml(next);
-  const error = invalid
-    ? '<p class="error" role="alert">鍵が違います。もう一度入れてください。</p>'
+  const error = notice
+    ? `<p class="error" role="alert">${escapeHtml(NOTICE_TEXT[notice])}</p>`
     : '';
 
   return `<!doctype html>
@@ -111,7 +123,7 @@ export function renderUnlockPage({ next, invalid = false }: UnlockPageOptions): 
       >
       <button type="submit">開く</button>
     </form>
-    <p class="hint">鍵は手元の <code>.env.local</code> と Vercel の環境変数 <code>MARKET_DB_SECRET_KEY</code> に入っています。</p>
+    <p class="hint">忘れた時は Vercel の環境変数 <code>MARKET_DB_SECRET_KEY</code> で決め直せます。</p>
   </main>
 </body>
 </html>`;

@@ -5,7 +5,7 @@ import {
   keyMatches,
   mdbCookieOptions,
 } from '@/lib/auth-gate';
-import { renderUnlockPage } from '@/lib/unlock-page';
+import { parseNotice, renderUnlockPage } from '@/lib/unlock-page';
 
 const PUBLIC_PATHS = [
   '/api/cron/alert',
@@ -25,13 +25,12 @@ export function proxy(request: NextRequest) {
   if (!secret) return NextResponse.next(); // No secret configured -> fail open (dev mode)
 
   const cookieKey = request.cookies.get(MDB_COOKIE_NAME)?.value;
-  if (cookieKey && keyMatches(cookieKey, secret)) return NextResponse.next();
-
-  // 既存のブックマークや自動化が使う ?key= は従来どおり通す
-  const queryKey = searchParams.get('key');
-  if (queryKey && keyMatches(queryKey, secret)) {
+  if (cookieKey && keyMatches(cookieKey, secret)) {
     const res = NextResponse.next();
-    res.cookies.set(MDB_COOKIE_NAME, secret, mdbCookieOptions);
+    // 画面を開くたび期限を打ち直す。使っている限り締め出されない
+    if (!pathname.startsWith('/api/')) {
+      res.cookies.set(MDB_COOKIE_NAME, secret, mdbCookieOptions);
+    }
     return res;
   }
 
@@ -43,7 +42,7 @@ export function proxy(request: NextRequest) {
   return new NextResponse(
     renderUnlockPage({
       next: buildNextPath(pathname, searchParams),
-      invalid: searchParams.get('unlock') === 'invalid',
+      notice: parseNotice(searchParams.get('unlock')),
     }),
     {
       status: 403,
@@ -57,6 +56,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|manifest|.*\.(?:jpg|jpeg|png|svg|ico|webmanifest)).*)',
+    '/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|manifest|.*\\.(?:jpg|jpeg|png|svg|ico|webmanifest)).*)',
   ],
 };
