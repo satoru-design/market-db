@@ -4,6 +4,8 @@ import { detectAlerts } from '@/lib/alerts';
 import { detectPhase, buySignals, type Phase } from '@/lib/signals';
 import { getProfile } from '@/lib/profile';
 import { formatBuyAction } from '@/lib/buy-action';
+import { isCronAuthorized, unauthorized } from '@/lib/api-auth';
+import { sanityCheckIndicators } from '@/lib/indicator-sanity';
 
 const ALERT_LOCK_HOURS = 24;
 const PHASE_KEY = 'snapshot:lastPhase';
@@ -22,24 +24,23 @@ async function sendSlack(text: string) {
 }
 
 export async function GET(request: Request) {
-  // Vercel Cron sends Authorization: Bearer <CRON_SECRET> when CRON_SECRET is set.
-  // For now we accept the request if either: (a) no CRON_SECRET configured, or (b) header matches.
-  const authHeader = request.headers.get('authorization');
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
+  // Vercel Cron sends Authorization: Bearer <CRON_SECRET>.
+  // CRON_SECRET が未設定でも通していたため、URL を知る誰でも叩けて
+  // Slack への通知と KV のフェーズ記録を外部から動かせた。本番では必ず要求する。
+  if (!isCronAuthorized(request)) return unauthorized();
 
   const origin = new URL(request.url).origin;
   const md = await fetch(`${origin}/api/market-data`).then(r => r.json());
 
-  const fg = Number(md.fg);
-  const vix = Number(md.vix);
-  const skew = Number(md.skew);
-  if (Number.isNaN(fg) || Number.isNaN(vix) || Number.isNaN(skew)) {
-    return NextResponse.json({ skipped: 'no indicators' });
+  // 上流が壊れた値を返した時に買い推奨を出さない。NaN だけでなく範囲も見る
+  const sanity = sanityCheckIndicators(md);
+  if (!sanity.ok) {
+    console.error('alert: indicator sanity check failed:', sanity.reason);
+    return NextResponse.json({ skipped: 'indicators out of range' });
   }
 
-  const ind = { fg, vix, skew };
+  const ind = sanity.indicators;
+  const { fg, vix, skew } = ind;
   const prevPhase = await kv.get<Phase>(PHASE_KEY);
   const alerts = detectAlerts(ind, prevPhase);
   const currentPhase = detectPhase(ind);
@@ -48,7 +49,6 @@ export async function GET(request: Request) {
   const lastFired = (await kv.get<Record<string, string>>(LASTFIRED_KEY)) ?? {};
   const now = Date.now();
   const fired: string[] = [];
-  const secret = process.env.MARKET_DB_SECRET_KEY ?? '';
 
   // フェーズ変化時は「今何を買うか」を具体アクション付きで添える
   const profile = await getProfile();
@@ -61,7 +61,8 @@ export async function GET(request: Request) {
   for (const a of alerts) {
     const last = lastFired[a.key] ? new Date(lastFired[a.key]).getTime() : 0;
     if (now - last < ALERT_LOCK_HOURS * 60 * 60 * 1000) continue;
-    const url = `${origin}/alert?event=${a.key}${secret ? `&key=${secret}` : ''}`;
+    // 解錠は POST /api/unlock だけ（0c319d7）。通知リンクに認証情報は載せない。
+    const url = `${origin}/alert?event=${encodeURIComponent(a.key)}`;
     let text = `🚨 ${a.title}\n${a.detail}\n📊 ${url}`;
     if (a.key === 'phase_change') {
       text += `\n\n${formatBuyAction(currentPhase, capital, { fg, vix, skew, signalsActive })}`;

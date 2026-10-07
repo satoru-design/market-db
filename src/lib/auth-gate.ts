@@ -3,6 +3,8 @@
  * proxy.ts と /api/unlock の両方から使う（状態は持たない純粋な関数だけ）。
  */
 
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
 export const MDB_COOKIE_NAME = 'mdb_key';
 export const MDB_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
@@ -27,6 +29,24 @@ export function keyMatches(input: string, secret: string): boolean {
     diff |= input.charCodeAt(i) ^ secret.charCodeAt(i);
   }
   return diff === 0;
+}
+
+/**
+ * クッキーに入れる値。鍵そのものではなく鍵から導いた別の文字列を置く。
+ * クッキーが漏れても MARKET_DB_SECRET_KEY 自体は復元できない。
+ */
+const SESSION_TOKEN_LABEL = 'mdb-session-v1';
+
+export function sessionToken(secret: string): string {
+  return createHmac('sha256', secret).update(SESSION_TOKEN_LABEL).digest('hex');
+}
+
+/** クッキーの値が今の鍵から導いたものか、定数時間で突き合わせる。 */
+export function sessionTokenMatches(input: unknown, secret: string): boolean {
+  if (!secret || typeof input !== 'string') return false;
+  const expected = sessionToken(secret);
+  if (input.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(input, 'utf8'), Buffer.from(expected, 'utf8'));
 }
 
 /** 解錠後の戻り先。外部サイトへ飛ばされないよう自サイト内の相対パスだけ通す。 */

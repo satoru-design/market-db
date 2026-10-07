@@ -7,6 +7,7 @@ import {
   keyMatches,
   mdbCookieOptions,
   safeNextPath,
+  sessionToken,
 } from '@/lib/auth-gate';
 
 export const dynamic = 'force-dynamic';
@@ -81,6 +82,6 @@ export async function POST(request: NextRequest) {
 
   await clearFailures(ip);
   const res = NextResponse.redirect(backTo(), 303);
-  res.cookies.set(MDB_COOKIE_NAME, secret, mdbCookieOptions);
+  res.cookies.set(MDB_COOKIE_NAME, sessionToken(secret), mdbCookieOptions);
   return res;
 }
