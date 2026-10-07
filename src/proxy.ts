@@ -2,8 +2,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 import {
   MDB_COOKIE_NAME,
   buildNextPath,
-  keyMatches,
   mdbCookieOptions,
+  sessionToken,
+  sessionTokenMatches,
 } from '@/lib/auth-gate';
 import { parseNotice, renderUnlockPage } from '@/lib/unlock-page';
 
@@ -22,14 +23,19 @@ export function proxy(request: NextRequest) {
   }
 
   const secret = process.env.MARKET_DB_SECRET_KEY;
-  if (!secret) return NextResponse.next(); // No secret configured -> fail open (dev mode)
+  if (!secret) {
+    // 鍵が未設定の時に素通しするのはローカル開発だけ。
+    // 本番で環境変数が欠けたら画面を公開してしまうので、そこは閉じる。
+    if (process.env.NODE_ENV !== 'production') return NextResponse.next();
+    return new NextResponse('Forbidden', { status: 403 });
+  }
 
   const cookieKey = request.cookies.get(MDB_COOKIE_NAME)?.value;
-  if (cookieKey && keyMatches(cookieKey, secret)) {
+  if (sessionTokenMatches(cookieKey, secret)) {
     const res = NextResponse.next();
     // 画面を開くたび期限を打ち直す。使っている限り締め出されない
     if (!pathname.startsWith('/api/')) {
-      res.cookies.set(MDB_COOKIE_NAME, secret, mdbCookieOptions);
+      res.cookies.set(MDB_COOKIE_NAME, sessionToken(secret), mdbCookieOptions);
     }
     return res;
   }

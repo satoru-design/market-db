@@ -6,6 +6,8 @@ import { buildMorningPrompt } from '@/lib/morning-prompt';
 import { getProfile } from '@/lib/profile';
 import { detectPhase, buySignals } from '@/lib/signals';
 import { formatBuyAction } from '@/lib/buy-action';
+import { isCronAuthorized, unauthorized } from '@/lib/api-auth';
+import { sanityCheckIndicators } from '@/lib/indicator-sanity';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -34,10 +36,9 @@ async function sendSlack(text: string): Promise<void> {
 }
 
 export async function GET(request: Request) {
-  const authHeader = request.headers.get('authorization');
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  }
+  // CRON_SECRET が未設定でも通していたため、URL を知る誰でも叩けた。
+  // 1回ごとに Anthropic の課金と Slack 投稿が走るので本番では必ず要求する。
+  if (!isCronAuthorized(request)) return unauthorized();
 
   const origin = new URL(request.url).origin;
   const dateLabel = jstDateString();
@@ -71,13 +72,12 @@ export async function GET(request: Request) {
       .map(b => (b.type === 'text' ? b.text : ''))
       .join('');
 
-    // 「今何を買うか」を毎朝そのまま実行できる形（ティッカー・金額・買い方）で添える
-    const fg = Number(md.fg);
-    const vix = Number(md.vix);
-    const skew = Number(md.skew);
+    // 「今何を買うか」を毎朝そのまま実行できる形（ティッカー・金額・買い方）で添える。
+    // 上流が壊れた値を返した時は金額を出さない（NaN だけでなく範囲も見る）
+    const sanity = sanityCheckIndicators(md);
     let buyBlock = '';
-    if (!Number.isNaN(fg) && !Number.isNaN(vix) && !Number.isNaN(skew)) {
-      const ind = { fg, vix, skew };
+    if (sanity.ok) {
+      const ind = sanity.indicators;
       buyBlock =
         '\n\n' +
         formatBuyAction(
@@ -88,6 +88,9 @@ export async function GET(request: Request) {
           },
           { ...ind, signalsActive: buySignals(ind).filter(s => s.active).length },
         );
+    } else {
+      console.error('morning-summary: indicator sanity check failed:', sanity.reason);
+      buyBlock = '\n\n⚠️ 指標が取得できなかったため「今どう動くか」は省略。手元で確認のうえ判断すること';
     }
 
     const slackText = `🌅 *${dateLabel} Morning Briefing*\n\n${body}${buyBlock}\n\n📈 <${origin}/|Daily Briefing>`;
@@ -95,8 +98,11 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ ok: true, dateLabel, bodyLength: body.length, newsCount: news.length });
   } catch (err) {
+    // 例外の本文には上流 API のエラー本体や内部 URL が混じる。
+    // Slack とレスポンスには出さず、詳細はサーバーログだけに残す。
     const message = err instanceof Error ? err.message : String(err);
-    await sendSlack(`⚠️ Morning Briefing 生成失敗 (${dateLabel}): ${message.slice(0, 200)}`);
-    return NextResponse.json({ ok: false, error: message }, { status: 500 });
+    console.error('morning-summary failed:', message);
+    await sendSlack(`⚠️ Morning Briefing 生成失敗 (${dateLabel})。詳細はサーバーログを確認`);
+    return NextResponse.json({ ok: false, error: 'generation failed' }, { status: 500 });
   }
 }

@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { buildNextPath, escapeHtml, keyMatches, safeNextPath } from './auth-gate';
+import {
+  buildNextPath,
+  escapeHtml,
+  keyMatches,
+  safeNextPath,
+  sessionToken,
+  sessionTokenMatches,
+} from './auth-gate';
 import { parseNotice, renderUnlockPage } from './unlock-page';
 
 describe('keyMatches', () => {
@@ -12,6 +19,40 @@ describe('keyMatches', () => {
     expect(keyMatches('abc12', 'abc123')).toBe(false);
     expect(keyMatches('', 'abc123')).toBe(false);
     expect(keyMatches('abc123', '')).toBe(false);
+  });
+});
+
+describe('sessionToken', () => {
+  it('クッキーに鍵そのものを置かない', () => {
+    const secret = 'super-secret-key';
+    const token = sessionToken(secret);
+    expect(token).not.toContain(secret);
+    expect(token).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('鍵が変われば値も変わる', () => {
+    expect(sessionToken('a-key')).not.toBe(sessionToken('b-key'));
+  });
+
+  it('同じ鍵なら同じ値（端末をまたいで使える）', () => {
+    expect(sessionToken('a-key')).toBe(sessionToken('a-key'));
+  });
+});
+
+describe('sessionTokenMatches', () => {
+  it('今の鍵から導いた値だけ通す', () => {
+    expect(sessionTokenMatches(sessionToken('a-key'), 'a-key')).toBe(true);
+    expect(sessionTokenMatches(sessionToken('a-key'), 'b-key')).toBe(false);
+  });
+
+  it('鍵の生値をクッキーに入れても通らない', () => {
+    expect(sessionTokenMatches('a-key', 'a-key')).toBe(false);
+  });
+
+  it('欠落・空・secret 未設定は通さない', () => {
+    expect(sessionTokenMatches(undefined, 'a-key')).toBe(false);
+    expect(sessionTokenMatches('', 'a-key')).toBe(false);
+    expect(sessionTokenMatches(sessionToken('a-key'), '')).toBe(false);
   });
 });
 
