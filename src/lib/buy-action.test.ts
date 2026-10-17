@@ -54,8 +54,8 @@ describe('弾薬(cashPool)の投入（決定論的であること）', () => {
     expect(p.leverageYen).toBe(0);
   });
 
-  it('NEUTRAL / WATCH / HEAT は弾薬を温存する', () => {
-    for (const phase of ['NEUTRAL', 'WATCH', 'HEAT'] as const) {
+  it('NEUTRAL / HEAT は弾薬を温存する', () => {
+    for (const phase of ['NEUTRAL', 'HEAT'] as const) {
       expect(buildDeployPlan(phase, CAP).totalYen, phase).toBe(0);
     }
   });
@@ -97,10 +97,10 @@ describe('落ちるナイフ規律', () => {
     expect(buildDeployPlan('HEAT', CAP).leverageAdvice).toContain('全決済');
   });
 
-  it('規律の但し書きは投入がある時だけ付く', () => {
+  it('一括禁止の但し書きはレバを出す時だけ付く', () => {
     expect(formatBuyAction('PERFECT', CAP)).toContain('一括禁止');
-    expect(formatBuyAction('HIGH', CAP)).toContain('一括禁止');
     expect(formatBuyAction('NEUTRAL', CAP)).not.toContain('一括禁止');
+    expect(formatBuyAction('WATCH', CAP)).not.toContain('一括禁止');
   });
 
   it('1銘柄上限を超えると警告が出る（PERFECTのCore 70万を4本に割ると17.5万で収まる）', () => {
@@ -120,6 +120,42 @@ describe('ティッカー表示', () => {
   it('レバを出さないフェーズでは SPXL / TQQQ を買えと言わない', () => {
     const out = formatBuyAction('HIGH', CAP);
     expect(out).not.toContain('SPXL');
+  });
+});
+
+describe('打診枠（2026-10-18 追加）', () => {
+  it('WATCH は弾薬の10%を Core へ。レバは出さない', () => {
+    const p = buildDeployPlan('WATCH', CAP);
+    expect(p.coreYen).toBe(100000);
+    expect(p.leverageYen).toBe(0);
+    expect(p.isProbe).toBe(true);
+  });
+
+  it('打診枠は「目標残高」と明示する（増分として読ませない）', () => {
+    const out = formatBuyAction('WATCH', CAP);
+    expect(out).toContain('目標残高');
+    expect(out).toContain('既に入れていれば追加なし');
+  });
+
+  it('WATCH では 3倍ブルの銘柄を出さない', () => {
+    const out = formatBuyAction('WATCH', CAP);
+    expect(out).not.toContain('SPXL');
+    expect(out).not.toContain('TQQQ');
+  });
+
+  it('WATCH には打診の注記が付く', () => {
+    expect(formatBuyAction('WATCH', CAP)).toContain('毎日買い増す指示ではありません');
+  });
+
+  it('弾薬が0なら WATCH でも打診は発生しない', () => {
+    const p = buildDeployPlan('WATCH', NO_POOL);
+    expect(p.coreYen).toBe(0);
+    expect(p.isProbe).toBe(false);
+  });
+
+  it('PERFECT / HIGH は打診扱いにしない', () => {
+    expect(buildDeployPlan('PERFECT', CAP).isProbe).toBe(false);
+    expect(buildDeployPlan('HIGH', CAP).isProbe).toBe(false);
   });
 });
 
