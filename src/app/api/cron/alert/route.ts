@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { kv } from '@vercel/kv';
-import { detectAlerts } from '@/lib/alerts';
+import { detectAlerts, lockKeyFor, lockHoursFor } from '@/lib/alerts';
 import { detectPhase, buySignals, type Phase } from '@/lib/signals';
 import { getProfile } from '@/lib/profile';
 import { formatBuyAction } from '@/lib/buy-action';
 
-const ALERT_LOCK_HOURS = 24;
 const PHASE_KEY = 'snapshot:lastPhase';
 const LASTFIRED_KEY = 'alert:lastFired';
 
@@ -59,15 +58,21 @@ export async function GET(request: Request) {
   const signalsActive = buySignals(ind).filter(s => s.active).length;
 
   for (const a of alerts) {
-    const last = lastFired[a.key] ? new Date(lastFired[a.key]).getTime() : 0;
-    if (now - last < ALERT_LOCK_HOURS * 60 * 60 * 1000) continue;
+    const lockKey = lockKeyFor(a.key, prevPhase, currentPhase);
+    const lockMs = lockHoursFor(a.key, currentPhase) * 60 * 60 * 1000;
+    const last = lastFired[lockKey] ? new Date(lastFired[lockKey]).getTime() : 0;
+    if (now - last < lockMs) continue;
     const url = `${origin}/alert?event=${a.key}${secret ? `&key=${secret}` : ''}`;
-    let text = `🚨 ${a.title}\n${a.detail}\n📊 ${url}`;
-    if (a.key === 'phase_change') {
-      text += `\n\n${formatBuyAction(currentPhase, capital, { fg, vix, skew, signalsActive })}`;
+    let text = `🚨 ${a.title}
+${a.detail}
+📊 ${url}`;
+    if (a.key === 'phase_change' || a.key === 'perfect_now') {
+      text += `
+
+${formatBuyAction(currentPhase, capital, { fg, vix, skew, signalsActive })}`;
     }
     await sendSlack(text);
-    lastFired[a.key] = new Date(now).toISOString();
+    lastFired[lockKey] = new Date(now).toISOString();
     fired.push(a.key);
   }
 
