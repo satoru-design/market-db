@@ -44,6 +44,14 @@ const PHASE_MARK: Record<Phase, string> = {
   NEUTRAL: '⚪',
 };
 
+/** 同じ局面で前に出した通知の記録。 */
+export type LastSent = {
+  phase: Phase;
+  at: string;       // ISO
+  totalYen: number;
+  count: number;    // この局面に入ってから出した回数（今回を含まない）
+};
+
 export type AlertInput = {
   phase: Phase;
   prevPhase?: Phase | null;
@@ -57,6 +65,8 @@ export type AlertInput = {
   triggers?: string[];
   at?: Date;
   testNote?: string;
+  /** 同じ局面で前に出した通知。2通目以降であることを示すために使う。 */
+  lastSent?: LastSent | null;
 };
 
 function stamp(at: Date): string {
@@ -81,8 +91,14 @@ export function summaryLine(i: AlertInput): string {
   const move = p.totalYen > 0
     ? `${p.isProbe ? '打診枠' : '投入'} ${yen(p.totalYen)}`
     : '投入なし';
+  // 2通目以降は一覧の時点で分かるようにする。本文を開かないと
+  // 再掲だと気づけないなら、一覧に出す意味が薄い。
+  const ls = i.lastSent;
+  const again = ls && ls.phase === i.phase && p.totalYen > 0
+    ? `・${ls.count + 1}回目`
+    : '';
   return `相場 ${PHASE_HEADLINE[i.phase]}（${stamp(at)}）`
-    + `F&G${i.fg}・VIX${i.vix}・SKEW${i.skew}・${move}`;
+    + `F&G${i.fg}・VIX${i.vix}・SKEW${i.skew}・${move}${again}`;
 }
 
 export function buildAlertBlocks(i: AlertInput): AlertMessage {
@@ -139,7 +155,12 @@ export function buildAlertBlocks(i: AlertInput): AlertMessage {
       },
     });
   } else {
-    const head = p.isProbe ? '打診枠（目標残高）' : '今回投入';
+    // 再掲で「今回投入」と書くと、下の「積み増しではない」と正面から矛盾する。
+    // 見出しの側を変える（註で打ち消すより、最初から矛盾させない）。
+    const repeat = !!(i.lastSent && i.lastSent.phase === i.phase);
+    const head = p.isProbe
+      ? '打診枠（目標残高）'
+      : repeat ? '投入計画（前回から変わらず）' : '今回投入';
     blocks.push({
       type: 'section',
       text: { type: 'mrkdwn', text: `*${head} ${yen(p.totalYen)}*` },
@@ -173,7 +194,27 @@ export function buildAlertBlocks(i: AlertInput): AlertMessage {
   }
 
   // 制約は context に落とす。本文と同じ重さで並べると、毎回読み飛ばされる。
-  const notes: string[] = [`積立は自動（月${yen(MONTHLY_TOTAL)}）で継続中。操作不要`];
+  const notes: string[] = [];
+
+  // 2通目以降であることを先に言う。
+  //
+  // PERFECT が数日続くと、同じ内容が毎日届く。読む側からは前の通知と
+  // 区別がつかないので、2通目から読まれなくなる。
+  //
+  // **「投入済み」とは書かない。** システムが知っているのは「同じ内容を出した」
+  // ことだけで、小池が実際に買ったかどうかは知らない。知らないことを
+  // 知っているように書くと、金額の判断がそこで狂う。
+  const ls = i.lastSent;
+  if (ls && ls.phase === i.phase && p.totalYen > 0) {
+    const when = stamp(new Date(ls.at));
+    notes.push(
+      `この内容を出すのは ${ls.count + 1} 回目です（前回 ${when}）。`
+      + '金額は毎回おなじ計画で、積み増しの指示ではありません。'
+      + '実行済みなら追加はありません',
+    );
+  }
+
+  notes.push(`積立は自動（月${yen(MONTHLY_TOTAL)}）で継続中。操作不要`);
   if (p.leverageYen > 0) {
     notes.push(
       '3倍ブルは一括禁止。想定DD 原資産-30%でレバ実質-70%級。'

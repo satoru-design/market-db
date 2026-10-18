@@ -158,3 +158,64 @@ describe('重複を1通にまとめる（route 側の規約）', () => {
     expect(src).toContain('for (const k of triggers) markFired(k)');
   });
 });
+
+describe('同じ局面での再掲（2026-10-18 追加）', () => {
+  const LS = { phase: 'PERFECT' as const, at: '2026-10-17T05:43:00+09:00', totalYen: 1000000, count: 1 };
+
+  it('2通目は一覧の1行で再掲と分かる', () => {
+    expect(summaryLine(base({ lastSent: LS }))).toContain('2回目');
+  });
+
+  it('初回は回数を出さない', () => {
+    expect(summaryLine(base({ lastSent: null }))).not.toContain('回目');
+  });
+
+  it('本文に前回の日時と「積み増しではない」が出る', () => {
+    const s = flat(buildAlertBlocks(base({ lastSent: LS })));
+    expect(s).toContain('2 回目');
+    expect(s).toContain('2026/10/17');
+    expect(s).toContain('積み増しの指示ではありません');
+  });
+
+  it('**実行済みとは書かない**（システムは知らない）', () => {
+    const s = flat(buildAlertBlocks(base({ lastSent: LS })));
+    expect(s).not.toContain('投入済み');
+    expect(s).not.toContain('購入済み');
+    // 条件つきの言い回しなら可
+    expect(s).toContain('実行済みなら追加はありません');
+  });
+
+  it('フェーズが変わったら数え直す（前の局面の回数を持ち越さない）', () => {
+    const s = flat(buildAlertBlocks(base({ phase: 'HIGH', lastSent: LS })));
+    expect(s).not.toContain('回目');
+  });
+
+  it('投入ゼロの局面では再掲の断りを出さない', () => {
+    const s = flat(buildAlertBlocks(base({
+      phase: 'NEUTRAL',
+      lastSent: { ...LS, phase: 'NEUTRAL' },
+    })));
+    expect(s).not.toContain('回目');
+  });
+
+  it('route はフェーズが変わった記録を捨てる', () => {
+    const src = require('node:fs').readFileSync(
+      require('node:path').join(__dirname, '../app/api/cron/alert/route.ts'), 'utf8');
+    expect(src).toContain('stored.phase === currentPhase ? stored : null');
+    expect(src).toContain('count: (lastSent?.count ?? 0) + 1');
+  });
+});
+
+describe('再掲の見出しが本文と矛盾しない', () => {
+  it('初回は「今回投入」', () => {
+    expect(flat(buildAlertBlocks(base({ lastSent: null })))).toContain('今回投入');
+  });
+
+  it('再掲は「今回投入」と言わない（積み増しではないと断っているため）', () => {
+    const s = flat(buildAlertBlocks(base({
+      lastSent: { phase: 'PERFECT', at: '2026-10-17T05:43:00+09:00', totalYen: 1000000, count: 1 },
+    })));
+    expect(s).not.toContain('今回投入');
+    expect(s).toContain('前回から変わらず');
+  });
+});

@@ -3,10 +3,14 @@ import { kv } from '@vercel/kv';
 import { detectAlerts, lockKeyFor, lockHoursFor } from '@/lib/alerts';
 import { detectPhase, buySignals, type Phase } from '@/lib/signals';
 import { getProfile } from '@/lib/profile';
-import { buildAlertBlocks } from '@/lib/alert-blocks';
+import { buildAlertBlocks, type LastSent } from '@/lib/alert-blocks';
+import { buildDeployPlan } from '@/lib/buy-action';
 
 const PHASE_KEY = 'snapshot:lastPhase';
 const LASTFIRED_KEY = 'alert:lastFired';
+// 同じ局面で何通目かを覚える。PERFECT が数日続くと同じ内容が毎日届き、
+// 2通目から読まれなくなるので、再掲であることを本人に言う。
+const LASTSENT_KEY = 'alert:lastSent';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,6 +88,10 @@ export async function GET(request: Request) {
 
   if (action) {
     const url = `${origin}/alert?event=${action.key}${secret ? `&key=${secret}` : ''}`;
+    // 同じ局面での再掲かどうか。フェーズが変わったら数え直す。
+    const stored = await kv.get<LastSent>(LASTSENT_KEY);
+    const lastSent = stored && stored.phase === currentPhase ? stored : null;
+
     await sendSlack(buildAlertBlocks({
       phase: currentPhase,
       prevPhase,
@@ -92,7 +100,18 @@ export async function GET(request: Request) {
       url,
       triggers,
       at: new Date(now),
+      lastSent,
     }));
+
+    // 送ったことだけを記録する。**実行したかどうかは記録しない**
+    // （システムは知らない。知らないことを数に入れない）。
+    const plan = buildDeployPlan(currentPhase, capital);
+    await kv.set<LastSent>(LASTSENT_KEY, {
+      phase: currentPhase,
+      at: new Date(now).toISOString(),
+      totalYen: plan.totalYen,
+      count: (lastSent?.count ?? 0) + 1,
+    });
     markFired(action.key);
     // 畳み込んだ閾値も「送った」扱いにする。そうしないと次の周回で
     // 同じ内容が単独で飛んでくる。
