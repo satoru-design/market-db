@@ -94,9 +94,9 @@ export function buildDeployPlan(phase: Phase, capital: Capital = DEFAULT_CAPITAL
   if (coreYen <= 0) {
     coreAdvice = phase === 'HEAT' ? '買わない。むしろ利確して弾薬に戻す局面' : '買わない（弾薬は温存）';
   } else if (phase === 'PERFECT') {
-    coreAdvice = '🎯 ショットOK。成行一括で拾う（千載一遇・待たない）';
+    coreAdvice = '成行一括で拾う（分割しない）';
   } else if (isProbe) {
-    coreAdvice = '🧪 打診枠。上の金額は「目標残高」。既に入れていれば追加なし。一度に入れてよい';
+    coreAdvice = '打診枠。金額は「目標残高」で、既に入れていれば追加なし。一度に入れてよい';
   } else {
     coreAdvice = '3回に分割・5営業日ごと（約3週間）・下落日に指値';
   }
@@ -108,7 +108,7 @@ export function buildDeployPlan(phase: Phase, capital: Capital = DEFAULT_CAPITAL
         ? '保有していれば全決済して現金化（減価が致命傷）'
         : '買わない（レンジ減価でジリ貧）';
   } else {
-    leverageAdvice = '⚡ 4回に分割・3営業日ごと（約2週間）・各回とも指値。一括厳禁';
+    leverageAdvice = '4回に分割・3営業日ごと・各回とも指値。一括厳禁';
   }
 
   const perName = coreYen / 4;

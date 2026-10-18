@@ -3,20 +3,20 @@ import { kv } from '@vercel/kv';
 import { detectAlerts, lockKeyFor, lockHoursFor } from '@/lib/alerts';
 import { detectPhase, buySignals, type Phase } from '@/lib/signals';
 import { getProfile } from '@/lib/profile';
-import { formatBuyAction } from '@/lib/buy-action';
+import { buildAlertBlocks } from '@/lib/alert-blocks';
 
 const PHASE_KEY = 'snapshot:lastPhase';
 const LASTFIRED_KEY = 'alert:lastFired';
 
 export const dynamic = 'force-dynamic';
 
-async function sendSlack(text: string) {
+async function sendSlack(payload: { text: string; blocks?: unknown[] }) {
   const url = process.env.MARKET_DB_SLACK_WEBHOOK;
   if (!url) return;
   await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -57,23 +57,53 @@ export async function GET(request: Request) {
   };
   const signalsActive = buySignals(ind).filter(s => s.active).length;
 
-  for (const a of alerts) {
+  // ロックを通った通知だけを残す。
+  const passed = alerts.filter(a => {
     const lockKey = lockKeyFor(a.key, prevPhase, currentPhase);
     const lockMs = lockHoursFor(a.key, currentPhase) * 60 * 60 * 1000;
     const last = lastFired[lockKey] ? new Date(lastFired[lockKey]).getTime() : 0;
-    if (now - last < lockMs) continue;
-    const url = `${origin}/alert?event=${a.key}${secret ? `&key=${secret}` : ''}`;
-    let text = `🚨 ${a.title}
-${a.detail}
-📊 ${url}`;
-    if (a.key === 'phase_change' || a.key === 'perfect_now') {
-      text += `
+    return now - last >= lockMs;
+  });
 
-${formatBuyAction(currentPhase, capital, { fg, vix, skew, signalsActive })}`;
+  const markFired = (key: string) => {
+    lastFired[lockKeyFor(key, prevPhase, currentPhase)] = new Date(now).toISOString();
+    fired.push(key);
+  };
+
+  // 「何を買うか」を伴う通知は1通にまとめる。
+  //
+  // 2026-10-18 まで、PERFECT の夜は最大4通が別々に飛んでいた
+  // （vix_spike / fg_panic / phase_change / perfect_now）。しかも
+  // phase_change と perfect_now は本文が丸ごと同じだった。
+  // 閾値は指標を見れば分かるので、畳み込んで1通にする。
+  const action = passed.find(a => a.key === 'phase_change')
+    ?? passed.find(a => a.key === 'perfect_now');
+  const triggers = passed
+    .filter(a => a.key === 'vix_spike' || a.key === 'fg_panic' || a.key === 'skew_high')
+    .map(a => a.key);
+
+  if (action) {
+    const url = `${origin}/alert?event=${action.key}${secret ? `&key=${secret}` : ''}`;
+    await sendSlack(buildAlertBlocks({
+      phase: currentPhase,
+      prevPhase,
+      fg, vix, skew, signalsActive,
+      capital,
+      url,
+      triggers,
+      at: new Date(now),
+    }));
+    markFired(action.key);
+    // 畳み込んだ閾値も「送った」扱いにする。そうしないと次の周回で
+    // 同じ内容が単独で飛んでくる。
+    for (const k of triggers) markFired(k);
+  } else {
+    // 行動を伴わない閾値だけが点いた場合。ここは短いままでよい。
+    for (const a of passed) {
+      const url = `${origin}/alert?event=${a.key}${secret ? `&key=${secret}` : ''}`;
+      await sendSlack({ text: `${a.title}（${a.detail}） ${url}` });
+      markFired(a.key);
     }
-    await sendSlack(text);
-    lastFired[lockKey] = new Date(now).toISOString();
-    fired.push(a.key);
   }
 
   await kv.set(LASTFIRED_KEY, lastFired);

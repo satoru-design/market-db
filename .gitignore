@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 文面確認用の使い捨てスクリプト（2026-10-18）
+tmp/
