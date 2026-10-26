@@ -15,8 +15,25 @@ const ALL: Array<'HEAT' | 'PERFECT' | 'HIGH' | 'WATCH' | 'NEUTRAL'> = [
 ];
 
 describe('毎月の積立（自動・判断対象外）', () => {
-  it('合計は月148,304円（投信・米株・貴金属の3画面を足した額）', () => {
-    expect(MONTHLY_TOTAL).toBe(148304);
+  it('合計は月248,304円（楽天とSBIの両社を足した額）', () => {
+    expect(MONTHLY_TOTAL).toBe(248304);
+  });
+
+  // 2026-10-26: 楽天だけを見て「月148,304円まで絞った」と報告していた。
+  // 証券口座は2社ある。片方だけ見て家計全体の積立額を語らない。
+  it('証券会社ごとの内訳が合う', () => {
+    const by = (b: string) =>
+      MONTHLY_TSUMITATE.filter(f => f.broker === b).reduce((a, f) => a + f.yen, 0);
+    expect(by('楽天'), '楽天ぶん').toBe(148304);
+    expect(by('SBI'), 'SBIぶん').toBe(100000);
+    expect(by('SBI'), 'SBIはクレカ上限ちょうど').toBeLessThanOrEqual(100000);
+  });
+
+  it('2026-10-26 にSBIで解除した4本は残っていない', () => {
+    const sbi = MONTHLY_TSUMITATE.filter(f => f.broker === 'SBI').map(f => f.name).join('|');
+    for (const n of ['FANG', 'NASDAQ', '増配']) {
+      expect(sbi, `${n} がSBI側に残っている`).not.toContain(n);
+    }
   });
 
   it('2026-10-26 時点で残っている設定が入っている', () => {
@@ -32,11 +49,12 @@ describe('毎月の積立（自動・判断対象外）', () => {
     const names = MONTHLY_TSUMITATE.map(f => f.name).join('|');
     expect(names, '米株積立が無い').toContain('米株積立');
     expect(names, '純金積立が無い').toContain('純金積立');
-    const toushin = MONTHLY_TSUMITATE
+    const rakuten = MONTHLY_TSUMITATE.filter(f => f.broker === '楽天');
+    const toushin = rakuten
       .filter(f => !f.name.includes('米株積立') && !f.name.includes('純金積立'))
       .reduce((a, f) => a + f.yen, 0);
-    expect(toushin, '投信ぶんだけで10万円').toBe(100000);
-    expect(MONTHLY_TOTAL - toushin, '米株+貴金属ぶん').toBe(48304);
+    expect(toushin, '楽天の投信ぶんだけで10万円').toBe(100000);
+    expect(148304 - toushin, '楽天の米株+貴金属ぶん').toBe(48304);
   });
 
   it('止めた豪州3本は積立リストに含まれない', () => {

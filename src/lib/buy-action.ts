@@ -27,8 +27,8 @@ export type Capital = {
 
 export const DEFAULT_CAPITAL: Capital = { cashPool: 0, maxSingleAsset: 200000 };
 
-// 毎月の自動積立（楽天証券。2026-10-26 に3画面を実機で確認した実設定）。
-// 合計 月148,304円。
+// 毎月の自動積立（楽天証券＋SBI証券。2026-10-26 に両社の画面を実機で確認）。
+// 合計 月248,304円（楽天 148,304 + SBI 100,000）。
 //
 // 2026-10-26 までの誤り:
 //  投信のぶん（10万円）だけを持っていて、米株積立と貴金属積立を数えていなかった。
@@ -42,15 +42,23 @@ export const DEFAULT_CAPITAL: Capital = { cashPool: 0, maxSingleAsset: 200000 };
 // 注意: NISAつみたて枠の2026年ぶんは使い切っている。11月・12月の
 //  オルカン/楽天VYM は枠不足でエラーになり得る（米株積立で同じ事故が起きた）。
 //  その場合の実額は月78,304円まで落ちる。走った結果を見て直す。
-export const MONTHLY_TSUMITATE: { name: string; yen: number; account: string }[] = [
-  { name: 'eMAXIS Slim オルカン', yen: 50000, account: 'NISAつみたて' },
-  { name: '楽天・VYM', yen: 20000, account: 'NISAつみたて' },
-  { name: 'ニッセイTOPIX', yen: 8000, account: '特定' },
-  { name: '大和住銀DC国内株式', yen: 7000, account: '特定' },
-  { name: 'Tracers S&P1000(米国中小型)', yen: 8000, account: '特定' },
-  { name: 'eMAXIS Slim 新興国株式', yen: 7000, account: '特定' },
-  { name: '米株積立 BHP / EFA / RIO（3本・束）', yen: 43304, account: '特定' },
-  { name: '純金積立', yen: 5000, account: '特定' },
+export type Tsumitate = { name: string; yen: number; account: string; broker: '楽天' | 'SBI' };
+
+export const MONTHLY_TSUMITATE: Tsumitate[] = [
+  { name: 'eMAXIS Slim オルカン', yen: 50000, account: 'NISAつみたて', broker: '楽天' },
+  { name: '楽天・VYM', yen: 20000, account: 'NISAつみたて', broker: '楽天' },
+  { name: 'ニッセイTOPIX', yen: 8000, account: '特定', broker: '楽天' },
+  { name: '大和住銀DC国内株式', yen: 7000, account: '特定', broker: '楽天' },
+  { name: 'Tracers S&P1000(米国中小型)', yen: 8000, account: '特定', broker: '楽天' },
+  { name: 'eMAXIS Slim 新興国株式', yen: 7000, account: '特定', broker: '楽天' },
+  { name: '米株積立 BHP / EFA / RIO（3本・束）', yen: 43304, account: '特定', broker: '楽天' },
+  { name: '純金積立', yen: 5000, account: '特定', broker: '楽天' },
+  // SBI証券。全額クレジットカード決済で、設定金額上限100,000円をちょうど使い切る。
+  // 2026-10-26 に7本→3本へ畳んだ（解除=Slim S&P500 / FANG+ / NASDAQ100 / SBI・V米国増配）。
+  // NISAは1人1社で楽天側にあるため、SBIは全部 特定/一般。
+  { name: 'SBI・V・S&P500', yen: 50000, account: '特定', broker: 'SBI' },
+  { name: 'eMAXIS Slim オルカン（SBI分）', yen: 40000, account: '特定', broker: 'SBI' },
+  { name: 'SBI・iシェアーズ・インド株式', yen: 10000, account: '特定', broker: 'SBI' },
 ];
 
 export const MONTHLY_TOTAL = MONTHLY_TSUMITATE.reduce((a, f) => a + f.yen, 0);
