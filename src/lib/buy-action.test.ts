@@ -15,15 +15,28 @@ const ALL: Array<'HEAT' | 'PERFECT' | 'HIGH' | 'WATCH' | 'NEUTRAL'> = [
 ];
 
 describe('毎月の積立（自動・判断対象外）', () => {
-  it('合計は月10万円', () => {
-    expect(MONTHLY_TOTAL).toBe(100000);
+  it('合計は月148,304円（投信・米株・貴金属の3画面を足した額）', () => {
+    expect(MONTHLY_TOTAL).toBe(148304);
   });
 
-  it('2026-09 の確定6本が入っている', () => {
+  it('2026-10-26 時点で残っている設定が入っている', () => {
     const names = MONTHLY_TSUMITATE.map(f => f.name).join('|');
     for (const n of ['オルカン', '楽天・VYM', 'ニッセイTOPIX', '大和住銀DC国内株式', 'Tracers S&P1000', '新興国株式']) {
       expect(names, `${n} が積立リストに無い`).toContain(n);
     }
+  });
+
+  // 2026-10-26: 投信の画面しか見ておらず、米株(ETF)と貴金属の積立を数えていなかった。
+  // 通知は月10万と言い続けていたが実際は月148,304円が出ていた。3画面ぶんを持つ。
+  it('投信以外の2画面（米株・貴金属）も数に入っている', () => {
+    const names = MONTHLY_TSUMITATE.map(f => f.name).join('|');
+    expect(names, '米株積立が無い').toContain('米株積立');
+    expect(names, '純金積立が無い').toContain('純金積立');
+    const toushin = MONTHLY_TSUMITATE
+      .filter(f => !f.name.includes('米株積立') && !f.name.includes('純金積立'))
+      .reduce((a, f) => a + f.yen, 0);
+    expect(toushin, '投信ぶんだけで10万円').toBe(100000);
+    expect(MONTHLY_TOTAL - toushin, '米株+貴金属ぶん').toBe(48304);
   });
 
   it('止めた豪州3本は積立リストに含まれない', () => {

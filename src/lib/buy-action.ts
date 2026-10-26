@@ -27,7 +27,21 @@ export type Capital = {
 
 export const DEFAULT_CAPITAL: Capital = { cashPool: 0, maxSingleAsset: 200000 };
 
-// 毎月の自動積立（2026-09-11 時点の実設定）。合計 月100,000円。
+// 毎月の自動積立（楽天証券。2026-10-26 に3画面を実機で確認した実設定）。
+// 合計 月148,304円。
+//
+// 2026-10-26 までの誤り:
+//  投信のぶん（10万円）だけを持っていて、米株積立と貴金属積立を数えていなかった。
+//  通知は「積立 月10.0万円」と言い続けていたが、実際には月148,304円が出ていた。
+//  同日の棚卸しで、止めた設定（投信4本・米株3本・貴金属2本／計148,745円）を外し、
+//  残った設定をここへ写した。画面に無い金額は書かない。
+//
+// 米株と純金は1本ごとの金額を画面から取り切っていないので束で持つ。
+// 推定で1本ずつに割り振ると、測った数字と作った数字の区別がつかなくなる。
+//
+// 注意: NISAつみたて枠の2026年ぶんは使い切っている。11月・12月の
+//  オルカン/楽天VYM は枠不足でエラーになり得る（米株積立で同じ事故が起きた）。
+//  その場合の実額は月78,304円まで落ちる。走った結果を見て直す。
 export const MONTHLY_TSUMITATE: { name: string; yen: number; account: string }[] = [
   { name: 'eMAXIS Slim オルカン', yen: 50000, account: 'NISAつみたて' },
   { name: '楽天・VYM', yen: 20000, account: 'NISAつみたて' },
@@ -35,6 +49,8 @@ export const MONTHLY_TSUMITATE: { name: string; yen: number; account: string }[]
   { name: '大和住銀DC国内株式', yen: 7000, account: '特定' },
   { name: 'Tracers S&P1000(米国中小型)', yen: 8000, account: '特定' },
   { name: 'eMAXIS Slim 新興国株式', yen: 7000, account: '特定' },
+  { name: '米株積立 BHP / EFA / RIO（3本・束）', yen: 43304, account: '特定' },
+  { name: '純金積立', yen: 5000, account: '特定' },
 ];
 
 export const MONTHLY_TOTAL = MONTHLY_TSUMITATE.reduce((a, f) => a + f.yen, 0);
