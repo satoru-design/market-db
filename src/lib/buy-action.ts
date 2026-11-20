@@ -1,4 +1,5 @@
 import type { Phase } from './signals';
+import { fgStage, splitByStage, type FgStage } from './fg-stages';
 
 // Slack通知「今どう動くか」を、フェーズと弾薬(cashPool)から決定論的に組み立てる。
 //
@@ -82,7 +83,15 @@ const DEPLOY: Record<Phase, { core: number; leverage: number }> = {
   NEUTRAL: { core: 0, leverage: 0 },
 };
 
-const CORE_TICKERS = '`VT` `VTI` ／ 投信: オルカン / eMAXIS Slim S&P500';
+// 2026-11-21 追加「中身の割合は F&G の段階で決める」:
+//  金額（いくら出すか）は従来どおり フェーズ×弾薬。中身（何に分けるか）は F&G の段階で決める。
+//  段階1 恐怖＝主力70・守り30 ／ 段階2 強い恐怖＝60・25・戻り15 ／ 段階3 極度の恐怖＝55・20・25。
+//  割合と根拠の正本は fg-stages.ts。ここに数字を書き足さないこと。
+//  F&G が30より上（WATCH が VIX だけで点いた時など）は従来どおり全部を主力へ。
+
+export const CORE_TICKERS = '`VT` `VTI` ／ 投信: オルカン / eMAXIS Slim S&P500';
+export const DEF_TICKERS = '`VIG`（ヘルスケアを厚くするなら `VHT`）／ 投信: 楽天・VYM';
+export const REBOUND_TICKERS = '`QQQ` ／ 投信: NASDAQ100に連動するもの';
 const LEV_TICKERS = '`SPXL` `TQQQ`';
 
 const KNIFE =
@@ -99,7 +108,11 @@ export function yen(n: number): string {
 }
 
 export type DeployPlan = {
-  coreYen: number;
+  coreYen: number; // Core 全体（主力＋守り）
+  coreMainYen: number; // うち 主力（全世界/全米）
+  defensiveYen: number; // うち 守り（配当成長）
+  reboundYen: number; // うち 戻り（NASDAQ100）
+  stage: FgStage | null; // F&G の段階。30より上なら null
   leverageYen: number;
   totalYen: number;
   coreAdvice: string;
@@ -108,7 +121,11 @@ export type DeployPlan = {
   isProbe: boolean;
 };
 
-export function buildDeployPlan(phase: Phase, capital: Capital = DEFAULT_CAPITAL): DeployPlan {
+export function buildDeployPlan(
+  phase: Phase,
+  capital: Capital = DEFAULT_CAPITAL,
+  fg?: number,
+): DeployPlan {
   const r = DEPLOY[phase];
   const coreYen = Math.round(capital.cashPool * r.core);
   const leverageYen = Math.round(capital.cashPool * r.leverage);
@@ -135,9 +152,16 @@ export function buildDeployPlan(phase: Phase, capital: Capital = DEFAULT_CAPITAL
     leverageAdvice = '4回に分割・3営業日ごと・各回とも指値。一括厳禁';
   }
 
+  const stage = fg === undefined ? null : fgStage(fg);
+  const split = splitByStage(coreYen, stage);
+
   const perName = coreYen / 4;
   return {
     coreYen,
+    coreMainYen: split.main,
+    defensiveYen: split.def,
+    reboundYen: split.rebound,
+    stage,
     leverageYen,
     totalYen: coreYen + leverageYen,
     coreAdvice,
@@ -152,7 +176,7 @@ export function formatBuyAction(
   capital: Capital = DEFAULT_CAPITAL,
   indicators?: { fg: number; vix: number; skew: number; signalsActive: number },
 ): string {
-  const p = buildDeployPlan(phase, capital);
+  const p = buildDeployPlan(phase, capital, indicators?.fg);
   const lines: string[] = [`📌 *今どう動くか*  ${PHASE_LABEL[phase]}`];
 
   if (indicators) {
@@ -173,12 +197,25 @@ export function formatBuyAction(
   }
 
   if (p.coreYen > 0) {
-    lines.push(`*Core 全世界/全米* — ${yen(p.coreYen)}`);
+    if (p.stage) {
+      lines.push(`🧭 暴落の段階${p.stage.stage}「${p.stage.name}」（${p.stage.range}）の割合で分ける`);
+    }
+    lines.push(`*主力 全世界/全米* — ${yen(p.coreMainYen)}`);
     lines.push(`   ${CORE_TICKERS}`);
     lines.push(`   ↳ ${p.coreAdvice}`);
     if (p.overSingleCap) {
       lines.push(`   ⚠️ 1銘柄上限${yen(capital.maxSingleAsset)}超。銘柄を分散するか注文を分けること`);
     }
+  }
+  if (p.defensiveYen > 0) {
+    lines.push(`*守り 配当成長* — ${yen(p.defensiveYen)}`);
+    lines.push(`   ${DEF_TICKERS}`);
+    lines.push('   ↳ 主力と同じ日に、同じ回数で分けて入れる');
+  }
+  if (p.reboundYen > 0) {
+    lines.push(`*戻り NASDAQ100* — ${yen(p.reboundYen)}`);
+    lines.push(`   ${REBOUND_TICKERS}`);
+    lines.push('   ↳ 主力と同じ日に、同じ回数で分けて入れる。下げ相場では一番深く沈むので割合を増やさない');
   }
   if (p.leverageYen > 0) {
     lines.push(`*Leverage 3倍ブル* — ${yen(p.leverageYen)}`);

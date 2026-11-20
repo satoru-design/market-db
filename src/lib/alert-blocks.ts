@@ -1,4 +1,4 @@
-import { buildDeployPlan, yen, MONTHLY_TOTAL, type Capital } from './buy-action';
+import { buildDeployPlan, yen, MONTHLY_TOTAL, DEF_TICKERS, REBOUND_TICKERS, type Capital } from './buy-action';
 import type { Phase } from './signals';
 
 // 相場アラートの Slack 文面を Block Kit で組む。
@@ -103,7 +103,7 @@ export function summaryLine(i: AlertInput): string {
 
 export function buildAlertBlocks(i: AlertInput): AlertMessage {
   const at = i.at ?? new Date();
-  const p = buildDeployPlan(i.phase, i.capital);
+  const p = buildDeployPlan(i.phase, i.capital, i.fg);
   const blocks: SlackBlock[] = [];
 
   if (i.testNote) {
@@ -174,9 +174,32 @@ export function buildAlertBlocks(i: AlertInput): AlertMessage {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `*Core 全世界/全米*  ${yen(p.coreYen)}\n`
+          text: (p.stage ? `段階${p.stage.stage}「${p.stage.name}」の割合で分ける\n` : '')
+            + `*主力 全世界/全米*  ${yen(p.coreMainYen)}\n`
             + '`VT` `VTI` ／ 投信 オルカン・eMAXIS Slim S&P500\n'
             + `${p.coreAdvice}${warn}`,
+        },
+      });
+    }
+    if (p.defensiveYen > 0) {
+      blocks.push({
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*守り 配当成長*  ${yen(p.defensiveYen)}\n`
+            + `${DEF_TICKERS}\n`
+            + '主力と同じ日に、同じ回数で分けて入れる',
+        },
+      });
+    }
+    if (p.reboundYen > 0) {
+      blocks.push({
+        type: 'section',
+        text: {
+          type: 'mrkdwn',
+          text: `*戻り NASDAQ100*  ${yen(p.reboundYen)}\n`
+            + `${REBOUND_TICKERS}\n`
+            + '主力と同じ日に、同じ回数で分けて入れる',
         },
       });
     }

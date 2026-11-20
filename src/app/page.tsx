@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Gauge, Flame, TrendingDown } from 'lucide-react';
 import { InsightTabs } from '@/components/InsightTabs';
+import { FgStagePanel } from '@/components/FgStagePanel';
+import { detectPhase } from '@/lib/signals';
 
 interface MarketData {
   fg: string;
@@ -12,6 +14,7 @@ interface MarketData {
 
 export default function TerminalPage() {
   const [data, setData] = useState<MarketData>({ fg: '', vix: '', skew: '' });
+  const [status, setStatus] = useState<'loading' | 'error' | 'ready'>('loading');
 
   useEffect(() => {
     async function fetchData() {
@@ -24,8 +27,10 @@ export default function TerminalPage() {
           vix: json.vix ? json.vix.toFixed(2) : '',
           skew: json.skew ? json.skew.toFixed(2) : '',
         });
+        setStatus('ready');
       } catch (err) {
         console.error('Failed to fetch market data', err);
+        setStatus('error');
       }
     }
     fetchData();
@@ -58,6 +63,12 @@ export default function TerminalPage() {
             <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Yahoo Finance Auto-fetch</p>
           </div>
         </div>
+
+        <FgStagePanel
+          fg={Number.isNaN(parseFloat(data.fg)) ? null : parseFloat(data.fg)}
+          status={status}
+          phase={indicators ? detectPhase(indicators) : null}
+        />
 
         <InsightTabs indicators={indicators} />
       </div>
