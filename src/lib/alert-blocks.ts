@@ -67,6 +67,8 @@ export type AlertInput = {
   testNote?: string;
   /** 同じ局面で前に出した通知。2通目以降であることを示すために使う。 */
   lastSent?: LastSent | null;
+  /** 銘柄ごとの株数（share-plan.ts の formatSharesForSlack）。2026-11-21 追加。 */
+  shares?: string | null;
 };
 
 function stamp(at: Date): string {
@@ -213,6 +215,10 @@ export function buildAlertBlocks(i: AlertInput): AlertMessage {
             + `${p.leverageAdvice}`,
         },
       });
+    }
+    if (i.shares) {
+      blocks.push({ type: 'divider' });
+      blocks.push({ type: 'section', text: { type: 'mrkdwn', text: i.shares } });
     }
   }
 

@@ -175,6 +175,7 @@ export function formatBuyAction(
   phase: Phase,
   capital: Capital = DEFAULT_CAPITAL,
   indicators?: { fg: number; vix: number; skew: number; signalsActive: number },
+  shares?: string | null, // 銘柄ごとの株数（share-plan.ts の formatSharesForSlack）。2026-11-21 追加
 ): string {
   const p = buildDeployPlan(phase, capital, indicators?.fg);
   const lines: string[] = [`📌 *今どう動くか*  ${PHASE_LABEL[phase]}`];
@@ -225,7 +226,17 @@ export function formatBuyAction(
     lines.push(`• Leverage 3倍ブル: ${p.leverageAdvice}`);
   }
 
-  lines.push('');
-  lines.push(p.leverageYen > 0 ? KNIFE : PROBE_NOTE);
+  if (shares) {
+    lines.push('');
+    lines.push(shares);
+  }
+
+  // 2026-11-21 直し: 以前は3倍ブルが無ければ必ず PROBE_NOTE を出していて、
+  //  HIGH の通知に「打診枠はWATCHの間の上限です」が出ていた。
+  const tail = p.leverageYen > 0 ? KNIFE : p.isProbe ? PROBE_NOTE : null;
+  if (tail) {
+    lines.push('');
+    lines.push(tail);
+  }
   return lines.join('\n');
 }

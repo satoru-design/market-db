@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planOrder, tranchesFor, SAFETY_MARGIN } from './share-plan';
+import { planOrder, tranchesFor, SAFETY_MARGIN, formatSharesForSlack } from './share-plan';
 
 const PRICES = { VT: 20000, VIG: 32000, XLV: 23000, XLP: 12000, QQQ: 90000, SPXL: 25000, TQQQ: 12000 };
 
@@ -71,5 +71,36 @@ describe('planOrder の選び方（2026-11-21 の不具合）', () => {
     const err = p.etfs.reduce((s, l) => s + Math.abs(l.targetYen - l.costYen), 0);
     // 旧方式: VT7・VIG1・QQQ1 で ずれ合計 = 7296+17371+20000+20000+21459 = 86126
     expect(err).toBeLessThan(86126);
+  });
+});
+
+describe('formatSharesForSlack', () => {
+  const prices = { VT: 22529, VIG: 37371, XLV: 28111, XLP: 14346, QQQ: 96459, SPXL: 32000, TQQQ: 6531 };
+  it('11/21 朝の条件（弾薬30万円・HIGH・F&G 10）で VT 1株と投信2本を出す', () => {
+    const s = formatSharesForSlack('HIGH', 300000, 10, prices, '株価は11/21 06:00の値')!;
+    expect(s).toContain('1回30,000円・同じ注文を3回');
+    expect(s).toContain('`VT` 1株  22,529円');
+    expect(s).toContain('投信 楽天・VYM');
+    expect(s).toContain('0株：VIG・XLV・XLP・QQQ');
+  });
+  it('買わないフェーズは何も足さない', () => {
+    expect(formatSharesForSlack('NEUTRAL', 300000, 50, prices, 'x')).toBeNull();
+  });
+  it('株価が取れない時は、出せない理由を書く', () => {
+    expect(formatSharesForSlack('HIGH', 300000, 10, null, 'x')).toContain('株価が取れなかった');
+  });
+  it('PERFECT は3倍ブルの段も出す', () => {
+    const s = formatSharesForSlack('PERFECT', 1000000, 5, prices, 'x')!;
+    expect(s).toContain('1回700,000円・一括');
+    expect(s).toContain('3倍ブル*（1回75,000円・同じ注文を4回）');
+  });
+});
+
+describe('3倍ブルの0株の説明', () => {
+  it('3倍ブルの段では「投信で埋めている」と書かない', () => {
+    const s = formatSharesForSlack('PERFECT', 300000, 5, { VT: 22529, VIG: 37371, XLV: 28111, XLP: 14346, QQQ: 96459, SPXL: 32000, TQQQ: 6531 }, 'x')!;
+    const lev = s.split('\n\n').find(p => p.includes('3倍ブル'))!;
+    expect(lev).toContain('0株：SPXL');
+    expect(lev).not.toContain('投信で埋めている');
   });
 });

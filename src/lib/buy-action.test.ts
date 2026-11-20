@@ -247,3 +247,14 @@ describe('2026-09-11 時点の実測値', () => {
     expect(out).toContain('買いシグナル 0/3');
   });
 });
+
+describe('末尾の注意書き（2026-11-21 の不具合）', () => {
+  it('HIGH の通知に WATCH 用の「打診枠」の注意を出さない', () => {
+    const s = formatBuyAction('HIGH', { cashPool: 300000, maxSingleAsset: 200000 });
+    expect(s).not.toContain('打診枠はWATCHの間の上限');
+  });
+  it('WATCH の通知には出す', () => {
+    const s = formatBuyAction('WATCH', { cashPool: 300000, maxSingleAsset: 200000 });
+    expect(s).toContain('打診枠はWATCHの間の上限');
+  });
+});

@@ -141,3 +141,56 @@ export function planOrder(
 
   return { budgetYen, etfs, funds, etfYen, fundYen, leftoverYen: budgetYen - etfYen - fundYen };
 }
+
+// ---- Slack の通知に載せる文面（2026-11-21 追加・小池「通知にも出す」）----
+// 画面の「この弾薬で買う株数」と同じ計算（tranchesFor → planOrder）を文字にする。
+// 株価が取れない時も、何も書かずに黙らない（出せない理由を1行で書く）。
+
+const fullYen = (n: number) => `${Math.round(n).toLocaleString('ja-JP')}円`;
+
+const REPEAT: Record<Tranche['kind'], (t: Tranche, phase: Phase) => string> = {
+  core: (t, phase) => (phase === 'HIGH' ? `同じ注文を${t.times}回` : '一括'),
+  leverage: t => `同じ注文を${t.times}回`,
+};
+
+export function formatSharesForSlack(
+  phase: Phase,
+  cashPool: number,
+  fg: number | null,
+  priceYen: Record<string, number | null> | null,
+  quoteNote: string,
+): string | null {
+  const tranches = tranchesFor(phase, cashPool, fg);
+  if (tranches.length === 0) return null;
+  if (!priceYen) return '*1回に買う株数*\n株価が取れなかったので、株数は出せません。金額は上のとおりです。';
+
+  const parts: string[] = [];
+  for (const t of tranches) {
+    const plan = planOrder(t.budgetYen, t.buckets, priceYen);
+    const title = t.kind === 'leverage' ? '3倍ブル' : '主力・守り・戻り';
+    const lines = [`*1回に買う株数：${title}*（1回${fullYen(t.budgetYen)}・${REPEAT[t.kind](t, phase)}）`];
+    for (const l of plan.etfs.filter(l => l.shares > 0)) {
+      lines.push(`\`${l.ticker}\` ${l.shares}株  ${fullYen(l.costYen)}`);
+    }
+    for (const f of plan.funds) lines.push(`投信 ${f.name}  ${fullYen(f.yen)}`);
+    const zero = plan.etfs.filter(l => l.shares === 0).map(l => l.ticker);
+    if (zero.length) {
+      const why = t.kind === 'leverage'
+        ? '1株が目安額より高い分。投信には回さず弾薬に残す'
+        : '1株が目安額より高いか、先に予算を使い切った分。投信で埋めている';
+      lines.push(`0株：${zero.join('・')}（${why}）`);
+    }
+    lines.push(`使う額 ${fullYen(plan.etfYen + plan.fundYen)}・残り${fullYen(plan.leftoverYen)}は弾薬に残す`);
+    parts.push(lines.join('\n'));
+  }
+  parts.push(`${quoteNote}。1回分の${Math.round(SAFETY_MARGIN * 100)}%は値動きと為替の余白。注文前に楽天証券で値段を確かめる`);
+  return parts.join('\n\n');
+}
+
+/** 通知の脚注に使う「いつの株価か」。 */
+export function quoteNoteOf(asOf: string | null, usdjpy: number | null): string {
+  const when = asOf
+    ? new Intl.DateTimeFormat('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(asOf))
+    : '時刻不明';
+  return `株価は${when}の値・1ドル${usdjpy ? usdjpy.toFixed(2) : '--'}円で換算`;
+}

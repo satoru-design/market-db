@@ -72,7 +72,9 @@ function OrderTable({ t, priceYen, phase }: { t: Tranche; priceYen: Record<strin
       </div>
       <p className="text-sm text-slate-400">
         ETF {yen(plan.etfYen)}＋投信 {yen(plan.fundYen)}＝{yen(plan.etfYen + plan.fundYen)}。残り{yen(plan.leftoverYen)}は弾薬に残します。
-        {plan.etfs.some(l => l.shares === 0 && l.priceYen !== null) && ' 0株の銘柄は、1株が目安額に比べて高いか、先に予算を使い切ったものです。その分は投信で埋めています。'}
+        {plan.etfs.some(l => l.shares === 0 && l.priceYen !== null) && (t.kind === 'leverage'
+          ? ' 0株の銘柄は、1株が目安額に比べて高いものです。3倍ブルは投信に回さず、弾薬に残します。'
+          : ' 0株の銘柄は、1株が目安額に比べて高いか、先に予算を使い切ったものです。その分は投信で埋めています。')}
       </p>
     </div>
   );

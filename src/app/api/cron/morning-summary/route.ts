@@ -6,6 +6,8 @@ import { buildMorningPrompt } from '@/lib/morning-prompt';
 import { getProfile } from '@/lib/profile';
 import { detectPhase, buySignals } from '@/lib/signals';
 import { formatBuyAction } from '@/lib/buy-action';
+import { fetchQuotes, pricesInYen } from '@/lib/quotes';
+import { formatSharesForSlack, quoteNoteOf } from '@/lib/share-plan';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -78,15 +80,23 @@ export async function GET(request: Request) {
     let buyBlock = '';
     if (!Number.isNaN(fg) && !Number.isNaN(vix) && !Number.isNaN(skew)) {
       const ind = { fg, vix, skew };
+      const phase = detectPhase(ind);
+      // 株価が取れなくても朝の通知は止めない（株数の段が「出せない」と書くだけ）。
+      const quotes = await fetchQuotes().catch(() => null);
+      const shares = formatSharesForSlack(
+        phase, profile.cashPool, fg, pricesInYen(quotes),
+        quoteNoteOf(quotes?.asOf ?? null, quotes?.usdjpy ?? null),
+      );
       buyBlock =
         '\n\n' +
         formatBuyAction(
-          detectPhase(ind),
+          phase,
           {
             cashPool: profile.cashPool,
             maxSingleAsset: profile.maxSingleAsset,
           },
           { ...ind, signalsActive: buySignals(ind).filter(s => s.active).length },
+          shares,
         );
     }
 

@@ -5,6 +5,8 @@ import { detectPhase, buySignals, type Phase } from '@/lib/signals';
 import { getProfile } from '@/lib/profile';
 import { buildAlertBlocks, type LastSent } from '@/lib/alert-blocks';
 import { buildDeployPlan } from '@/lib/buy-action';
+import { fetchQuotes, pricesInYen } from '@/lib/quotes';
+import { formatSharesForSlack, quoteNoteOf } from '@/lib/share-plan';
 
 const PHASE_KEY = 'snapshot:lastPhase';
 const LASTFIRED_KEY = 'alert:lastFired';
@@ -92,6 +94,13 @@ export async function GET(request: Request) {
     const stored = await kv.get<LastSent>(LASTSENT_KEY);
     const lastSent = stored && stored.phase === currentPhase ? stored : null;
 
+    // 株数は株価が取れた時だけ。取れなくても通知自体は止めない（金額だけは出す）。
+    const quotes = await fetchQuotes().catch(() => null);
+    const shares = formatSharesForSlack(
+      currentPhase, capital.cashPool, fg, pricesInYen(quotes),
+      quoteNoteOf(quotes?.asOf ?? null, quotes?.usdjpy ?? null),
+    );
+
     await sendSlack(buildAlertBlocks({
       phase: currentPhase,
       prevPhase,
@@ -101,6 +110,7 @@ export async function GET(request: Request) {
       triggers,
       at: new Date(now),
       lastSent,
+      shares,
     }));
 
     // 送ったことだけを記録する。**実行したかどうかは記録しない**
