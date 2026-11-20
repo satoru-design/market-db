@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildAlertBlocks, summaryLine, type AlertInput } from './alert-blocks';
+import { alertPageUrl, buildAlertBlocks, summaryLine, type AlertInput } from './alert-blocks';
 
 // 2026-10-18 の書き直し。それまでの通知の冗長さは3つだった。
 //
@@ -217,5 +217,13 @@ describe('再掲の見出しが本文と矛盾しない', () => {
     })));
     expect(s).not.toContain('今回投入');
     expect(s).toContain('前回から変わらず');
+  });
+});
+
+describe('alertPageUrl（2026-11-21 鍵を外した）', () => {
+  it('URL に鍵を付けない', () => {
+    const u = alertPageUrl('https://market-db-five.vercel.app', 'phase_change');
+    expect(u).toBe('https://market-db-five.vercel.app/alert?event=phase_change');
+    expect(u).not.toContain('key=');
   });
 });

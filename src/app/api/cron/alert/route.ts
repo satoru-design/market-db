@@ -3,7 +3,7 @@ import { kv } from '@vercel/kv';
 import { detectAlerts, lockKeyFor, lockHoursFor } from '@/lib/alerts';
 import { detectPhase, buySignals, type Phase } from '@/lib/signals';
 import { getProfile } from '@/lib/profile';
-import { buildAlertBlocks, type LastSent } from '@/lib/alert-blocks';
+import { alertPageUrl, buildAlertBlocks, type LastSent } from '@/lib/alert-blocks';
 import { buildDeployPlan } from '@/lib/buy-action';
 import { fetchQuotes, pricesInYen } from '@/lib/quotes';
 import { formatSharesForSlack, quoteNoteOf } from '@/lib/share-plan';
@@ -53,7 +53,6 @@ export async function GET(request: Request) {
   const lastFired = (await kv.get<Record<string, string>>(LASTFIRED_KEY)) ?? {};
   const now = Date.now();
   const fired: string[] = [];
-  const secret = process.env.MARKET_DB_SECRET_KEY ?? '';
 
   // フェーズ変化時は「今何を買うか」を具体アクション付きで添える
   const profile = await getProfile();
@@ -89,7 +88,7 @@ export async function GET(request: Request) {
     .map(a => a.key);
 
   if (action) {
-    const url = `${origin}/alert?event=${action.key}${secret ? `&key=${secret}` : ''}`;
+    const url = alertPageUrl(origin, action.key);
     // 同じ局面での再掲かどうか。フェーズが変わったら数え直す。
     const stored = await kv.get<LastSent>(LASTSENT_KEY);
     const lastSent = stored && stored.phase === currentPhase ? stored : null;
@@ -129,7 +128,7 @@ export async function GET(request: Request) {
   } else {
     // 行動を伴わない閾値だけが点いた場合。ここは短いままでよい。
     for (const a of passed) {
-      const url = `${origin}/alert?event=${a.key}${secret ? `&key=${secret}` : ''}`;
+      const url = alertPageUrl(origin, a.key);
       await sendSlack({ text: `${a.title}（${a.detail}） ${url}` });
       markFired(a.key);
     }

@@ -18,6 +18,14 @@ import type { Phase } from './signals';
 
 export type SlackBlock = Record<string, unknown>;
 
+// 通知のボタンから開く画面の URL。**鍵（MARKET_DB_SECRET_KEY）を付けない。**
+// 2026-11-21 直し: 以前は `&key=<鍵>` を付けて Slack に流していた。
+//  ?key= での解錠は廃止済みなので開けもせず、鍵が Slack の履歴に残るだけだった。
+//  画面は端末に保存した鍵（cookie）で開く。初めての端末では鍵の入力欄が出る。
+export function alertPageUrl(origin: string, event: string): string {
+  return `${origin}/alert?event=${encodeURIComponent(event)}`;
+}
+
 export type AlertMessage = { text: string; blocks: SlackBlock[] };
 
 const PHASE_HEADLINE: Record<Phase, string> = {
