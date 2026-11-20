@@ -142,8 +142,7 @@ export function SharePlan({ cashPool, phase, fg }: { cashPool: number | null; ph
   }
 
   return (
-    <div className="mt-6 pt-6 border-t border-slate-700" data-testid="share-plan">
-      <h3 className="text-sm font-black text-amber-300 mb-3">この弾薬で買う株数</h3>
+    <div data-testid="share-plan">
       {body}
     </div>
   );

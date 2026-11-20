@@ -66,15 +66,16 @@ export default function TerminalPage() {
           </div>
         </div>
 
+        {/* 2026-11-21 小池: 指標のすぐ下に「今何を買うか」を置く。段階の表はその根拠なので後ろ。 */}
+        <CashPoolPanel
+          phase={indicators ? detectPhase(indicators) : null}
+          fg={Number.isNaN(parseFloat(data.fg)) ? null : parseFloat(data.fg)}
+        />
+
         <FgStagePanel
           fg={Number.isNaN(parseFloat(data.fg)) ? null : parseFloat(data.fg)}
           status={status}
           phase={indicators ? detectPhase(indicators) : null}
-        />
-
-        <CashPoolPanel
-          phase={indicators ? detectPhase(indicators) : null}
-          fg={Number.isNaN(parseFloat(data.fg)) ? null : parseFloat(data.fg)}
         />
 
         <section className="space-y-3">

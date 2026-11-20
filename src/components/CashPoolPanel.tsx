@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { Wallet } from 'lucide-react';
+import { ShoppingCart } from 'lucide-react';
 import type { Profile } from '@/lib/profile';
 import type { Phase } from '@/lib/signals';
 import { DEPLOY } from '@/lib/buy-action';
@@ -105,57 +105,61 @@ export function CashPoolPanel({ phase, fg }: { phase: Phase | null; fg: number |
 
   return (
     <section className="glass-card rounded-3xl p-5 sm:p-8 border-l-8 border-l-amber-500" data-testid="cash-pool-panel">
+      {/* 2026-11-21 小池: 今買うもの（株数）を先に、弾薬の入力はその下に置く。 */}
       <h2 className="text-sm font-black text-amber-400 tracking-[0.2em] flex items-center gap-3 mb-3">
-        <Wallet className="w-4 h-4" /> 弾薬
+        <ShoppingCart className="w-4 h-4" /> 今買うもの
       </h2>
-      <p className="text-base text-slate-100 font-bold mb-1">
-        {load === 'ready' && profile
-          ? `今の弾薬は${yen(profile.cashPool)}です。${when ? `（${when}に保存）` : '（保存した日時の記録はまだありません）'}`
-          : load === 'loading' ? '今の弾薬を読み込んでいます。' : '今の弾薬が読めませんでした。'}
-      </p>
-      <p className="text-sm text-slate-400 mb-5">
-        Slackの通知は、この額にフェーズの割合を掛けて買う額を出します。買ったら、使った分を引いた額に直してください。
-      </p>
-
-      <div className="flex flex-col sm:flex-row sm:items-end gap-3">
-        <label className="block flex-1">
-          <span className="text-xs text-slate-400 font-bold block mb-1">新しい弾薬（円）</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            value={text}
-            disabled={load !== 'ready'}
-            onChange={e => { setText(e.target.value); if (save !== 'saving') setSave('idle'); }}
-            onKeyDown={e => { if (e.key === 'Enter') onSave(); }}
-            placeholder="例: 390,600"
-            className="w-full bg-black/40 border border-slate-700 rounded-lg px-4 py-3 text-white font-mono text-xl disabled:opacity-50"
-          />
-        </label>
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={blocked !== null}
-          title={blocked ?? '弾薬をこの額で保存します'}
-          className="px-6 py-3 rounded-lg font-black text-sm bg-amber-500 text-black hover:bg-amber-400 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed"
-        >
-          {save === 'saving' ? '保存しています' : '弾薬を保存'}
-        </button>
-        {load === 'error' && (
-          <button type="button" onClick={fetchProfile} className="px-4 py-3 rounded-lg text-sm font-bold border border-slate-600 text-slate-200">
-            読み直す
-          </button>
-        )}
-      </div>
-
-      <p className="text-sm mt-3 min-h-[1.25rem]" data-testid="cash-pool-status">
-        {save === 'saved' && <span className="text-emerald-400 font-bold">保存しました。次の通知からこの額で計算します。</span>}
-        {save === 'failed' && <span className="text-red-400 font-bold">保存できませんでした（{saveError}）。額はまだ前のままです。</span>}
-        {(save === 'idle' || save === 'saving') && blocked && <span className="text-slate-500">{blocked}</span>}
-        {save === 'idle' && !blocked && value !== null && <span className="text-slate-300">「弾薬を保存」を押すと{yen(value)}に変わります。</span>}
-      </p>
-      <p className="text-sm text-slate-400 mt-1">{preview}</p>
-
       <SharePlan cashPool={base} phase={phase} fg={fg} />
+
+      <div className="mt-6 pt-6 border-t border-slate-700">
+        <h3 className="text-sm font-black text-amber-300 mb-2">弾薬</h3>
+        <p className="text-base text-slate-100 font-bold mb-1">
+          {load === 'ready' && profile
+            ? `今の弾薬は${yen(profile.cashPool)}です。${when ? `（${when}に保存）` : '（保存した日時の記録はまだありません）'}`
+            : load === 'loading' ? '今の弾薬を読み込んでいます。' : '今の弾薬が読めませんでした。'}
+        </p>
+        <p className="text-sm text-slate-400 mb-5">
+          Slackの通知は、この額にフェーズの割合を掛けて買う額を出します。買ったら、使った分を引いた額に直してください。
+        </p>
+
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+          <label className="block flex-1">
+            <span className="text-xs text-slate-400 font-bold block mb-1">新しい弾薬（円）</span>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={text}
+              disabled={load !== 'ready'}
+              onChange={e => { setText(e.target.value); if (save !== 'saving') setSave('idle'); }}
+              onKeyDown={e => { if (e.key === 'Enter') onSave(); }}
+              placeholder="例: 390,600"
+              className="w-full bg-black/40 border border-slate-700 rounded-lg px-4 py-3 text-white font-mono text-xl disabled:opacity-50"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={blocked !== null}
+            title={blocked ?? '弾薬をこの額で保存します'}
+            className="px-6 py-3 rounded-lg font-black text-sm bg-amber-500 text-black hover:bg-amber-400 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed"
+          >
+            {save === 'saving' ? '保存しています' : '弾薬を保存'}
+          </button>
+          {load === 'error' && (
+            <button type="button" onClick={fetchProfile} className="px-4 py-3 rounded-lg text-sm font-bold border border-slate-600 text-slate-200">
+              読み直す
+            </button>
+          )}
+        </div>
+
+        <p className="text-sm mt-3 min-h-[1.25rem]" data-testid="cash-pool-status">
+          {save === 'saved' && <span className="text-emerald-400 font-bold">保存しました。次の通知からこの額で計算します。</span>}
+          {save === 'failed' && <span className="text-red-400 font-bold">保存できませんでした（{saveError}）。額はまだ前のままです。</span>}
+          {(save === 'idle' || save === 'saving') && blocked && <span className="text-slate-500">{blocked}</span>}
+          {save === 'idle' && !blocked && value !== null && <span className="text-slate-300">「弾薬を保存」を押すと{yen(value)}に変わります。</span>}
+        </p>
+        <p className="text-sm text-slate-400 mt-1">{preview}</p>
+      </div>
     </section>
   );
 }
