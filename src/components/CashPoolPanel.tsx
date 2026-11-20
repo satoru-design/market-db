@@ -6,6 +6,7 @@ import type { Profile } from '@/lib/profile';
 import type { Phase } from '@/lib/signals';
 import { DEPLOY } from '@/lib/buy-action';
 import { MONEY_MAX } from '@/lib/profile-patch';
+import { tranchesFor } from '@/lib/share-plan';
 import { SharePlan } from './SharePlan';
 
 // 弾薬（暴落時に使う待機資金）を書き換える。
@@ -96,8 +97,18 @@ export function CashPoolPanel({ phase, fg }: { phase: Phase | null; fg: number |
   } else {
     const r = DEPLOY[phase];
     const out = Math.round(base * (r.core + r.leverage));
+    // 「1回いくらを何回」まで書く（総額と1回分を取り違えないように）。
+    const tr = tranchesFor(phase, base, fg);
+    const steps = tr
+      .map(t => {
+        const who = t.kind === 'leverage' ? '3倍ブルは' : tr.length > 1 ? '主力・守り・戻りは' : '';
+        return t.times > 1
+          ? `${who}1回${yen(t.budgetYen)}ずつ${t.times}回に分けて買います。`
+          : `${who}${yen(t.budgetYen)}を一括で買います。`;
+      })
+      .join('');
     preview = out > 0
-      ? `今は${phase}なので、この額の${Math.round((r.core + r.leverage) * 100)}%＝${yen(out)}が通知に出ます。`
+      ? `今は${phase}なので、この額の${Math.round((r.core + r.leverage) * 100)}%＝${yen(out)}を使います。${steps}${r.core + r.leverage < 1 ? `残りの${yen(base - out)}は、さらに下げた時のために取っておきます。` : ''}`
       : `今は${phase}なので、弾薬からは出しません。`;
   }
 
@@ -118,9 +129,11 @@ export function CashPoolPanel({ phase, fg }: { phase: Phase | null; fg: number |
             ? `今の弾薬は${yen(profile.cashPool)}です。${when ? `（${when}に保存）` : '（保存した日時の記録はまだありません）'}`
             : load === 'loading' ? '今の弾薬を読み込んでいます。' : '今の弾薬が読めませんでした。'}
         </p>
-        <p className="text-sm text-slate-400 mb-5">
-          Slackの通知は、この額にフェーズの割合を掛けて買う額を出します。買ったら、使った分を引いた額に直してください。
-        </p>
+        {/* 2026-11-21 小池「弾薬って5日間合計の金額をいれるんですか？」→ 総額だと分かる文に直した。 */}
+        <div className="text-sm text-slate-300 mb-5 space-y-1">
+          <p><span className="font-bold text-white">暴落の時に株へ回してよい現金の総額</span>を入れます。1回に買う額でも、何日分かの合計でもありません。</p>
+          <p className="text-slate-400">1回に買う額は、フェーズに合わせてこの総額から計算します。買ったら、使った分を引いた額に書き直してください。そのままだと次の回も同じ額で計算します。</p>
+        </div>
 
         <div className="flex flex-col sm:flex-row sm:items-end gap-3">
           <label className="block flex-1">
