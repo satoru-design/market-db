@@ -75,7 +75,7 @@ const PHASE_LABEL: Record<Phase, string> = {
 // 弾薬(cashPool)をフェーズごとにどれだけ・どこへ出すか（cashPool に対する比率）。
 //  PERFECT = 全額放出 / HIGH = 3割 / WATCH = 1割の打診枠 / HEAT・NEUTRAL = 温存
 //  レバレッジは PERFECT のみ。
-const DEPLOY: Record<Phase, { core: number; leverage: number }> = {
+export const DEPLOY: Record<Phase, { core: number; leverage: number }> = {
   HEAT: { core: 0, leverage: 0 },
   PERFECT: { core: 0.7, leverage: 0.3 },
   HIGH: { core: 0.3, leverage: 0 },
