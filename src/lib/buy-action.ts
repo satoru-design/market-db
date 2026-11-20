@@ -90,7 +90,7 @@ const DEPLOY: Record<Phase, { core: number; leverage: number }> = {
 //  F&G が30より上（WATCH が VIX だけで点いた時など）は従来どおり全部を主力へ。
 
 export const CORE_TICKERS = '`VT` `VTI` ／ 投信: オルカン / eMAXIS Slim S&P500';
-export const DEF_TICKERS = '`VIG`（ヘルスケアを厚くするなら `VHT`）／ 投信: 楽天・VYM';
+export const DEF_TICKERS = '`VIG` `XLV` `XLP` を3等分（`XLV` の代わりに `VHT` でも可）／ 投信: 楽天・VYM';
 export const REBOUND_TICKERS = '`QQQ` ／ 投信: NASDAQ100に連動するもの';
 const LEV_TICKERS = '`SPXL` `TQQQ`';
 
