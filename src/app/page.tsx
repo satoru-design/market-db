@@ -5,6 +5,7 @@ import { Gauge, Flame, TrendingDown } from 'lucide-react';
 import { InsightTabs } from '@/components/InsightTabs';
 import { FgStagePanel } from '@/components/FgStagePanel';
 import { ScenarioCards } from '@/components/ScenarioCards';
+import { CashPoolPanel } from '@/components/CashPoolPanel';
 import { detectPhase } from '@/lib/signals';
 
 interface MarketData {
@@ -70,6 +71,8 @@ export default function TerminalPage() {
           status={status}
           phase={indicators ? detectPhase(indicators) : null}
         />
+
+        <CashPoolPanel phase={indicators ? detectPhase(indicators) : null} />
 
         <section className="space-y-3">
           <h2 className="text-sm font-black text-indigo-400 tracking-[0.2em] pl-2">相場が動いたら</h2>
