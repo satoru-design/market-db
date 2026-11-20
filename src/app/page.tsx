@@ -72,7 +72,10 @@ export default function TerminalPage() {
           phase={indicators ? detectPhase(indicators) : null}
         />
 
-        <CashPoolPanel phase={indicators ? detectPhase(indicators) : null} />
+        <CashPoolPanel
+          phase={indicators ? detectPhase(indicators) : null}
+          fg={Number.isNaN(parseFloat(data.fg)) ? null : parseFloat(data.fg)}
+        />
 
         <section className="space-y-3">
           <h2 className="text-sm font-black text-indigo-400 tracking-[0.2em] pl-2">相場が動いたら</h2>

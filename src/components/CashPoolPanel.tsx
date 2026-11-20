@@ -6,6 +6,7 @@ import type { Profile } from '@/lib/profile';
 import type { Phase } from '@/lib/signals';
 import { DEPLOY } from '@/lib/buy-action';
 import { MONEY_MAX } from '@/lib/profile-patch';
+import { SharePlan } from './SharePlan';
 
 // 弾薬（暴落時に使う待機資金）を書き換える。
 // Slack の通知はこの額 × フェーズの割合で「いくら買うか」を出すので、買ったら直す。
@@ -32,7 +33,7 @@ function formatWhen(iso: string): string | null {
   return d.toLocaleString('ja-JP', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-export function CashPoolPanel({ phase }: { phase: Phase | null }) {
+export function CashPoolPanel({ phase, fg }: { phase: Phase | null; fg: number | null }) {
   const [load, setLoad] = useState<Load>('loading');
   const [profile, setProfile] = useState<Profile | null>(null);
   const [text, setText] = useState('');
@@ -153,6 +154,8 @@ export function CashPoolPanel({ phase }: { phase: Phase | null }) {
         {save === 'idle' && !blocked && value !== null && <span className="text-slate-300">「弾薬を保存」を押すと{yen(value)}に変わります。</span>}
       </p>
       <p className="text-sm text-slate-400 mt-1">{preview}</p>
+
+      <SharePlan cashPool={base} phase={phase} fg={fg} />
     </section>
   );
 }
