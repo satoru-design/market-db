@@ -48,23 +48,23 @@ export default function TerminalPage() {
   return (
     <div className="min-h-screen p-4 sm:p-8 lg:p-12 pb-24 text-slate-100">
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="glass-card rounded-3xl p-8 flex flex-col items-center justify-center space-y-4">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Gauge className="w-4 h-4" /> Fear &amp; Greed</h2>
-            <div className="text-6xl font-black text-white py-6">{data.fg || '--'}</div>
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">CNN Auto-fetch</p>
-          </div>
-          <div className="glass-card rounded-3xl p-8 flex flex-col items-center justify-center space-y-4">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Flame className="w-4 h-4" /> VIX Index</h2>
-            <div className="text-6xl font-black text-white py-6">{data.vix || '--.--'}</div>
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Yahoo Finance Auto-fetch</p>
-          </div>
-          <div className="glass-card rounded-3xl p-8 flex flex-col items-center justify-center space-y-4">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><TrendingDown className="w-4 h-4" /> Skew Index</h2>
-            <div className="text-6xl font-black text-white py-6">{data.skew || '---'}</div>
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">Yahoo Finance Auto-fetch</p>
-          </div>
+        {/* 2026-11-21 小池「1画面が指標で埋まるので勿体ない」→ スマホでも3つを横1列・低い帯にした。
+            一番見たいのは下の「今買うもの」なので、指標は1画面の上の方に収める。 */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4" data-testid="indicator-strip">
+          {[
+            { label: 'F&G', icon: Gauge, value: data.fg || '--', src: 'CNN' },
+            { label: 'VIX', icon: Flame, value: data.vix || '--.--', src: 'Yahoo Finance' },
+            { label: 'SKEW', icon: TrendingDown, value: data.skew || '---', src: 'Yahoo Finance' },
+          ].map(({ label, icon: Icon, value, src }) => (
+            <div key={label} className="glass-card rounded-2xl px-2 py-3 sm:p-5 flex flex-col items-center justify-center" title={`${src}から自動で取得`}>
+              <h2 className="text-[11px] sm:text-xs font-black text-slate-400 tracking-widest flex items-center gap-1"><Icon className="w-3.5 h-3.5" /> {label}</h2>
+              <div className="text-2xl sm:text-4xl font-black text-white mt-1 tabular-nums">{value}</div>
+            </div>
+          ))}
         </div>
+        <p className="text-[11px] text-slate-500 -mt-4 sm:-mt-3 pl-1">
+          {status === 'error' ? '指標が取れませんでした。少し待って開き直してください。' : 'F&GはCNN、VIXとSKEWはYahoo Financeから自動で取得しています。'}
+        </p>
 
         {/* 2026-11-21 小池: 指標のすぐ下に「今何を買うか」を置く。段階の表はその根拠なので後ろ。 */}
         <CashPoolPanel
