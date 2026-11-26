@@ -42,7 +42,7 @@ function sleeveCategory(k: Sleeve): PortfolioCategory {
   return {
     id: k,
     category: `${s.label}（${s.role}）`,
-    items: [`米国ETF：${s.etf}`, `投信：${s.fund}`],
+    items: [`米国ETF：${s.etf}`],
     strategy,
   };
 }

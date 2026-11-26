@@ -55,26 +55,12 @@ function OrderTable({ t, priceYen, phase }: { t: Tranche; priceYen: Record<strin
                 <td className="py-2 text-right font-mono text-slate-500 whitespace-nowrap">{yen(l.targetYen)}</td>
               </tr>
             ))}
-            {plan.funds.map(f => (
-              <tr key={f.bucket} className="border-b border-slate-800">
-                <td className="py-2 pr-3">
-                  <div className="text-white font-bold">{f.name}</div>
-                  <div className="text-xs text-slate-400">投信・{ROLE[f.bucket]}の残り</div>
-                </td>
-                <td className="py-2 pr-3 text-right font-black text-emerald-400 whitespace-nowrap">金額で</td>
-                <td className="py-2 pr-3 text-right font-mono text-slate-200 whitespace-nowrap">{yen(f.yen)}</td>
-                <td className="py-2 pr-3 text-right text-slate-500 whitespace-nowrap">100円から</td>
-                <td className="py-2 text-right text-slate-500">―</td>
-              </tr>
-            ))}
           </tbody>
         </table>
       </div>
       <p className="text-sm text-slate-400">
-        ETF {yen(plan.etfYen)}＋投信 {yen(plan.fundYen)}＝{yen(plan.etfYen + plan.fundYen)}。残り{yen(plan.leftoverYen)}は弾薬に残します。
-        {plan.etfs.some(l => l.shares === 0 && l.priceYen !== null) && (t.kind === 'leverage'
-          ? ' 0株の銘柄は、1株が目安額に比べて高いものです。3倍ブルは投信に回さず、弾薬に残します。'
-          : ' 0株の銘柄は、1株が目安額に比べて高いか、先に予算を使い切ったものです。その分は投信で埋めています。')}
+        使う額は{yen(plan.etfYen)}です。残り{yen(plan.leftoverYen)}は買わずに弾薬に残します。
+        {plan.etfs.some(l => l.shares === 0 && l.priceYen !== null) && ' 0株の銘柄は、1株が目安額に比べて高いか、先に予算を使い切ったものです。その分も弾薬に残ります。'}
       </p>
     </div>
   );

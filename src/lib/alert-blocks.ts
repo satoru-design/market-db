@@ -186,7 +186,7 @@ export function buildAlertBlocks(i: AlertInput): AlertMessage {
           type: 'mrkdwn',
           text: (p.stage ? `段階${p.stage.stage}「${p.stage.name}」の割合で分ける\n` : '')
             + `*主力 全世界/全米*  ${yen(p.coreMainYen)}\n`
-            + '`VT` `VTI` ／ 投信 オルカン・eMAXIS Slim S&P500\n'
+            + '`VT` `VTI`\n'
             + `${p.coreAdvice}${warn}`,
         },
       });

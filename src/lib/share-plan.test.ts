@@ -27,16 +27,16 @@ describe('planOrder', () => {
   it('使う額は1回分の98%を超えない', () => {
     for (const budget of [10000, 30000, 90000, 300000, 700000]) {
       const p = planOrder(budget, { main: budget * 0.55, def: budget * 0.2, rebound: budget * 0.25 }, PRICES);
-      expect(p.etfYen + p.fundYen).toBeLessThanOrEqual(Math.floor(budget * (1 - SAFETY_MARGIN)));
+      expect(p.etfYen).toBeLessThanOrEqual(Math.floor(budget * (1 - SAFETY_MARGIN)));
       expect(p.leftoverYen).toBeGreaterThanOrEqual(0);
     }
   });
-  it('1株が目安額より高すぎる銘柄は買わず、投信に回す', () => {
+  it('1株が目安額より高すぎる銘柄は買わず、弾薬に残す（投信には回さない）', () => {
     const p = planOrder(30000, { main: 16500, def: 6000, rebound: 7500 }, PRICES);
     expect(p.etfs.find(l => l.ticker === 'VT')?.shares).toBe(1);
     expect(p.etfs.find(l => l.ticker === 'QQQ')?.shares).toBe(0);
-    expect(p.funds.map(f => f.bucket).sort()).toEqual(['def', 'rebound']);
-    expect(p.funds.every(f => f.yen % 100 === 0)).toBe(true);
+    expect(p.leftoverYen).toBe(30000 - p.etfYen);
+    expect(p).not.toHaveProperty('funds');
   });
   it('額が大きければ割合どおりに近づく', () => {
     const p = planOrder(1000000, { main: 550000, def: 200000, rebound: 250000 }, PRICES);
@@ -44,14 +44,14 @@ describe('planOrder', () => {
     expect(Math.abs(main - 550000)).toBeLessThanOrEqual(20000);
     expect(p.etfs.find(l => l.ticker === 'XLP')!.shares).toBeGreaterThan(0);
   });
-  it('株価が取れない銘柄は0株にして、その分を投信に回す', () => {
+  it('株価が取れない銘柄は0株にして、その分を弾薬に残す', () => {
     const p = planOrder(100000, { main: 100000 }, { VT: null });
     expect(p.etfs[0].shares).toBe(0);
-    expect(p.funds).toEqual([{ bucket: 'main', name: 'オルカン', yen: 98000 }]);
+    expect(p.etfYen).toBe(0);
+    expect(p.leftoverYen).toBe(100000);
   });
-  it('3倍ブルの余りは投信に回さない', () => {
+  it('3倍ブルも1回分の98%を超えて買わない', () => {
     const p = planOrder(75000, { leverage: 75000 }, PRICES);
-    expect(p.funds).toEqual([]);
     expect(p.etfYen).toBeLessThanOrEqual(73500);
   });
 });
@@ -122,11 +122,11 @@ describe('守りは VIG・XLV・XLP・GLDM・TLT の5等分（2026-11-26）', ()
 
 describe('formatSharesForSlack', () => {
   const prices = { VT: 22529, VIG: 37371, XLV: 28111, XLP: 14346, QQQ: 96459, SPXL: 32000, TQQQ: 6531 };
-  it('11/21 朝の条件（弾薬30万円・HIGH・F&G 10）で VT 1株と投信2本を出す', () => {
+  it('11/21 朝の条件（弾薬30万円・HIGH・F&G 10）で VT 1株を出し、投信は出さない', () => {
     const s = formatSharesForSlack('HIGH', 300000, 10, prices, '株価は11/21 06:00の値')!;
     expect(s).toContain('1回30,000円・同じ注文を3回');
     expect(s).toContain('`VT` 1株  22,529円');
-    expect(s).toContain('投信 楽天・VYM');
+    expect(s).not.toContain('投信');
     expect(s).toContain('0株：VIG・XLV・XLP・GLDM・TLT・QQQ・XLK・SMH・COPX・SPHB');
   });
   it('買わないフェーズは何も足さない', () => {

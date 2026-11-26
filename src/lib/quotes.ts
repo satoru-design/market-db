@@ -2,7 +2,7 @@ import { PLAN_TICKERS } from './share-plan';
 
 // 株数の計算に使う株価（ドル）とドル円を Yahoo から取る。
 // 画面（/api/quotes）と Slack の通知（cron）が同じ値を使うよう、ここに1つだけ置く。
-// 取れなかった銘柄は null（その銘柄は0株にして投信に回る）。2026-11-21 追加。
+// 取れなかった銘柄は null（その銘柄は0株にして、その分は弾薬に残る）。2026-11-21 追加。
 
 export type Quotes = { usdjpy: number | null; prices: Record<string, number | null>; asOf: string | null };
 

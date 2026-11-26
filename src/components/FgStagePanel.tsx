@@ -93,7 +93,6 @@ export function FgStagePanel({ fg, status, phase }: { fg: number | null; status:
                       {s.label} <span className="text-xs font-bold text-slate-400">（{s.role}）</span>
                     </div>
                     <div className="text-slate-200">米国ETF：{s.etf}</div>
-                    <div className="text-slate-300">投信：{s.fund}</div>
                     <div className="text-xs text-slate-500 mt-1">{s.basis}</div>
                   </td>
                   {FG_STAGES.map((st) => {

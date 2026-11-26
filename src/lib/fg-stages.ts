@@ -51,26 +51,23 @@ export const FG_STAGES: FgStage[] = [
   { stage: 3, name: '極度の恐怖', range: 'F&G 0〜10', max: 10, mix: { main: 0.55, def: 0.2, rebound: 0.25 } },
 ];
 
-export const SLEEVES: Record<Sleeve, { label: string; role: string; etf: string; fund: string; basis: string }> = {
+export const SLEEVES: Record<Sleeve, { label: string; role: string; etf: string; basis: string }> = {
   main: {
     label: '主力',
     role: '戻りの土台',
     etf: 'VT・VTI',
-    fund: 'オルカン／eMAXIS Slim S&P500',
     basis: '有事に買って1年後 中央値+9%・最悪-28%（VT）',
   },
   def: {
     label: '守り',
     role: '下げ相場の保険',
     etf: 'VIG・XLV・XLP・GLDM・TLT を5等分（XLV の代わりに VHT でも可）',
-    fund: '楽天・VYM',
     basis: '翌営業日に買って1年後（円・重ならない8回）の中央値／最悪 VIG +11%／-25%・XLV +3%／-23%・XLP +6%／-19%・金 +11%／-14%・TLT -4%／-15%。2007〜08年の下げの入口で買うと TLT +1%〜-2%・金 -12%〜-20%（VIG -35%〜-39%）。TLT は普段の戻りでは負け、長い下げ相場にだけ効く。金は上場の古い GLD で測った値で、買うのは同じ金の GLDM',
   },
   rebound: {
     label: '戻り',
     role: 'V字の戻りを取る',
     etf: 'QQQ・XLK・SMH・COPX・SPHB を5等分',
-    fund: 'NASDAQ100に連動する投信',
     basis: '翌営業日に買って1年後（円・重ならない回）の中央値／最悪 QQQ +6%／-25%・XLK +7%／-23%・SMH +7%／-28%（各8回）、COPX +10%／-22%（6回）・SPHB +3%／-3%（5回）。COPX と SPHB は回数が少なく確かさが落ちる。2000年4月に QQQ を買うと-65%',
   },
 };

@@ -6,8 +6,11 @@ import type { Phase } from './signals';
 //  金額 = 弾薬 × フェーズの割合（DEPLOY）。HIGH は3回に分けるので1回分を出す。
 //  中身 = F&G の段階の割合（fg-stages.ts）。
 //  米国ETFは1株単位でしか買えないので、目安額に一番近くなる株数を選ぶ。
-//  ETFで割り切れなかった残りは、同じ役割の投信（100円単位で買える）に回す。
+//  ETFで割り切れなかった残りは、買わずに弾薬に残す。
 //  為替と値動きのずれに備えて、1回分の2%は使わずに残す。
+// 2026-11-26 小池「投信はすぐに買えるわけではないので外しましょう」「購入指示を出してからタイムラグがある」
+//  → 投信の受け皿をやめた。投信は注文の後に決まる値段で買う（米国株の投信は翌朝の値段）ので、
+//   暴落の日に見ている値段では買えない。ETFは市場で今の値段で買える。
 
 export type Bucket = Sleeve | 'leverage';
 
@@ -43,13 +46,6 @@ export const ETF_PLAN: Record<Bucket, { ticker: string; weight: number }[]> = {
   ],
 };
 
-// 投信で残りを埋める先。3倍ブルには投信を当てない（同じ値動きの投信が無い）。
-export const FUND_FOR: Record<Sleeve, string> = {
-  main: 'オルカン',
-  def: '楽天・VYM',
-  rebound: 'NASDAQ100の投信',
-};
-
 export const PLAN_TICKERS = Object.values(ETF_PLAN).flat().map(e => e.ticker);
 export const SAFETY_MARGIN = 0.02;
 
@@ -82,17 +78,14 @@ export type EtfLine = {
   bucket: Bucket;
   ticker: string;
   targetYen: number;
-  priceYen: number | null; // 取れなかった時は null（株数0で、目安額は投信に回る）
+  priceYen: number | null; // 取れなかった時は null（株数0で、目安額は弾薬に残る）
   shares: number;
   costYen: number;
 };
-export type FundLine = { bucket: Sleeve; name: string; yen: number };
 export type OrderPlan = {
   budgetYen: number;
   etfs: EtfLine[];
-  funds: FundLine[];
   etfYen: number;
-  fundYen: number;
   leftoverYen: number;
 };
 
@@ -142,22 +135,8 @@ export function planOrder(
   for (const l of etfs) l.costYen = Math.round(l.costYen);
   const etfYen = etfs.reduce((s, l) => s + l.costYen, 0);
 
-  // ETFで埋まらなかった分を、役割ごとの投信へ（100円単位・余白の2%は残す）。
-  const pool = Math.max(0, cap - etfYen);
-  const shortBy: [Sleeve, number][] = [];
-  for (const [bucket, yen] of Object.entries(buckets) as [Bucket, number][]) {
-    if (bucket === 'leverage' || !yen) continue;
-    const spent = etfs.filter(l => l.bucket === bucket).reduce((s, l) => s + l.costYen, 0);
-    if (yen - spent > 0) shortBy.push([bucket, yen - spent]);
-  }
-  const totalShort = shortBy.reduce((s, [, v]) => s + v, 0);
-  const scale = totalShort > pool ? pool / totalShort : 1;
-  const funds: FundLine[] = shortBy
-    .map(([bucket, v]) => ({ bucket, name: FUND_FOR[bucket], yen: Math.floor((v * scale) / 100) * 100 }))
-    .filter(f => f.yen >= 100);
-  const fundYen = funds.reduce((s, f) => s + f.yen, 0);
-
-  return { budgetYen, etfs, funds, etfYen, fundYen, leftoverYen: budgetYen - etfYen - fundYen };
+  // ETFで埋まらなかった分は投信に回さず、弾薬に残す（2026-11-26）。
+  return { budgetYen, etfs, etfYen, leftoverYen: budgetYen - etfYen };
 }
 
 // ---- Slack の通知に載せる文面（2026-11-21 追加・小池「通知にも出す」）----
@@ -190,15 +169,11 @@ export function formatSharesForSlack(
     for (const l of plan.etfs.filter(l => l.shares > 0)) {
       lines.push(`\`${l.ticker}\` ${l.shares}株  ${fullYen(l.costYen)}`);
     }
-    for (const f of plan.funds) lines.push(`投信 ${f.name}  ${fullYen(f.yen)}`);
     const zero = plan.etfs.filter(l => l.shares === 0).map(l => l.ticker);
     if (zero.length) {
-      const why = t.kind === 'leverage'
-        ? '1株が目安額より高い分。投信には回さず弾薬に残す'
-        : '1株が目安額より高いか、先に予算を使い切った分。投信で埋めている';
-      lines.push(`0株：${zero.join('・')}（${why}）`);
+      lines.push(`0株：${zero.join('・')}（1株が目安額より高いか、先に予算を使い切った分。弾薬に残す）`);
     }
-    lines.push(`使う額 ${fullYen(plan.etfYen + plan.fundYen)}・残り${fullYen(plan.leftoverYen)}は弾薬に残す`);
+    lines.push(`使う額 ${fullYen(plan.etfYen)}・残り${fullYen(plan.leftoverYen)}は弾薬に残す`);
     parts.push(lines.join('\n'));
   }
   parts.push(`${quoteNote}。1回分の${Math.round(SAFETY_MARGIN * 100)}%は値動きと為替の余白。注文前に楽天証券で値段を確かめる`);

@@ -89,9 +89,9 @@ export const DEPLOY: Record<Phase, { core: number; leverage: number }> = {
 //  割合と根拠の正本は fg-stages.ts。ここに数字を書き足さないこと。
 //  F&G が30より上（WATCH が VIX だけで点いた時など）は従来どおり全部を主力へ。
 
-export const CORE_TICKERS = '`VT` `VTI` ／ 投信: オルカン / eMAXIS Slim S&P500';
-export const DEF_TICKERS = '`VIG` `XLV` `XLP` `GLDM` `TLT` を5等分（`XLV` の代わりに `VHT` でも可）／ 投信: 楽天・VYM';
-export const REBOUND_TICKERS = '`QQQ` `XLK` `SMH` `COPX` `SPHB` を5等分 ／ 投信: NASDAQ100に連動するもの';
+export const CORE_TICKERS = '`VT` `VTI`';
+export const DEF_TICKERS = '`VIG` `XLV` `XLP` `GLDM` `TLT` を5等分（`XLV` の代わりに `VHT` でも可）';
+export const REBOUND_TICKERS = '`QQQ` `XLK` `SMH` `COPX` `SPHB` を5等分';
 const LEV_TICKERS = '`SPXL` `TQQQ`';
 
 const KNIFE =
