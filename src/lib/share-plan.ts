@@ -13,10 +13,13 @@ export type Bucket = Sleeve | 'leverage';
 
 export const ETF_PLAN: Record<Bucket, { ticker: string; weight: number }[]> = {
   main: [{ ticker: 'VT', weight: 1 }],
+  // 2026-11-26 小池「GLDも守りの候補に入れて」→ 4等分。重ならない8回の最悪が -14% で4本の中で一番浅く、
+  //  2007-11・2008-01 の下げの入口でも -12%・-20%（XLP -25%・-28%）だった。株と違う値動きをする唯一の1本。
   def: [
-    { ticker: 'VIG', weight: 1 / 3 },
-    { ticker: 'XLV', weight: 1 / 3 },
-    { ticker: 'XLP', weight: 1 / 3 },
+    { ticker: 'VIG', weight: 1 / 4 },
+    { ticker: 'XLV', weight: 1 / 4 },
+    { ticker: 'XLP', weight: 1 / 4 },
+    { ticker: 'GLD', weight: 1 / 4 },
   ],
   // 2026-11-26 小池「XLK・QQQ・SMHも残す」→ 戻りを3等分。重ならない8回で測ると3本はほぼ横並びで、
   //  どれか1本に絞る根拠が無かった（根拠の数字は fg-stages.ts の SLEEVES.rebound）。

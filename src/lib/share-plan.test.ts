@@ -104,6 +104,17 @@ describe('戻りは QQQ・XLK・SMH・COPX・SPHB の5等分（2026-11-26）', (
   });
 });
 
+describe('守りは VIG・XLV・XLP・GLD の4等分（2026-11-26）', () => {
+  it('守りの目安額を4本に等分する', () => {
+    // GLD は11/25の終値 327.45ドル × 159.18円。
+    const p = planOrder(300000, { def: 240000 }, { VIG: 37371, XLV: 28111, XLP: 14346, GLD: 52123 });
+    expect(p.etfs.map(l => [l.ticker, l.targetYen])).toEqual([
+      ['VIG', 60000], ['XLV', 60000], ['XLP', 60000], ['GLD', 60000],
+    ]);
+    expect(p.etfs.find(l => l.ticker === 'GLD')!.shares).toBe(1);
+  });
+});
+
 describe('formatSharesForSlack', () => {
   const prices = { VT: 22529, VIG: 37371, XLV: 28111, XLP: 14346, QQQ: 96459, SPXL: 32000, TQQQ: 6531 };
   it('11/21 朝の条件（弾薬30万円・HIGH・F&G 10）で VT 1株と投信2本を出す', () => {
@@ -111,7 +122,7 @@ describe('formatSharesForSlack', () => {
     expect(s).toContain('1回30,000円・同じ注文を3回');
     expect(s).toContain('`VT` 1株  22,529円');
     expect(s).toContain('投信 楽天・VYM');
-    expect(s).toContain('0株：VIG・XLV・XLP・QQQ・XLK・SMH・COPX・SPHB');
+    expect(s).toContain('0株：VIG・XLV・XLP・GLD・QQQ・XLK・SMH・COPX・SPHB');
   });
   it('買わないフェーズは何も足さない', () => {
     expect(formatSharesForSlack('NEUTRAL', 300000, 50, prices, 'x')).toBeNull();
