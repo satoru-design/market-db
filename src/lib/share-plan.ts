@@ -22,12 +22,13 @@ export const ETF_PLAN: Record<Bucket, { ticker: string; weight: number }[]> = {
 //  VYMに回って金の値動きにならなかった。GLDM は同じ金で1株約11,250円・経費率0.10%（GLD は0.40%）。
 // 同日 小池「TLTも守りの候補に入れて」→ 5等分。TLT（米国債20年超）は普段の暴落の1年後は中央値-4%で負けるが、
 //  2007-11・2008-01 の下げの入口では +1%・-2% で5本の中で一番浅い。長い下げ相場だけに効く保険。
+// 同日 小池「3等分にする」→ XLP・GLDM・TLT に絞った。VIG・XLV は下げの入口で -35〜-39% と VT と同じだけ沈み、
+//  保険になっていなかった。投信の受け皿を外したので、5本だと HIGH の1回10万円（段階2・3）で守りが1株も買えなかった。
+//  3本の重ならない8回 中央値+4%・最悪-14%・下げの入口2回の平均-14%（5本は +7%・-18%・-23%）。
   def: [
-    { ticker: 'VIG', weight: 1 / 5 },
-    { ticker: 'XLV', weight: 1 / 5 },
-    { ticker: 'XLP', weight: 1 / 5 },
-    { ticker: 'GLDM', weight: 1 / 5 },
-    { ticker: 'TLT', weight: 1 / 5 },
+    { ticker: 'XLP', weight: 1 / 3 },
+    { ticker: 'GLDM', weight: 1 / 3 },
+    { ticker: 'TLT', weight: 1 / 3 },
   ],
   // 2026-11-26 小池「XLK・QQQ・SMHも残す」→ 戻りを3等分。重ならない8回で測ると3本はほぼ横並びで、
   //  どれか1本に絞る根拠が無かった（根拠の数字は fg-stages.ts の SLEEVES.rebound）。

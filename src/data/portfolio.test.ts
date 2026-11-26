@@ -10,8 +10,8 @@ describe('配分データは今の表と同じ中身', () => {
     expect(portfolioData.map((c) => c.id)).toEqual(['main', 'def', 'rebound', 'leverage', 'tsumitate', 'pool']);
   });
 
-  it('守りは VIG・XLV・XLP、戻りは QQQ', () => {
-    expect(all).toContain('VIG・XLV・XLP');
+  it('守りは XLP・GLDM・TLT、戻りは QQQ', () => {
+    expect(all).toContain('XLP・GLDM・TLT');
     expect(portfolioData.find((c) => c.id === 'rebound')!.items.join()).toContain('QQQ');
   });
 

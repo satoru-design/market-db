@@ -172,7 +172,7 @@ describe('中身の割合は F&G の段階で決める（2026-11-21 追加）', 
     expect(p.reboundYen).toBe(19530);
     expect(p.coreMainYen).toBe(78120);
     const out = formatBuyAction('HIGH', POOL, { fg: 11, vix: 34, skew: 140, signalsActive: 2 });
-    expect(out).toContain('VIG');
+    expect(out).toContain('GLDM');
     expect(out).toContain('QQQ');
     expect(out).toContain('段階2');
   });
@@ -181,7 +181,7 @@ describe('中身の割合は F&G の段階で決める（2026-11-21 追加）', 
     const p = buildDeployPlan('WATCH', CAP, 45);
     expect(p.stage).toBeNull();
     expect(p.coreMainYen).toBe(p.coreYen);
-    expect(formatBuyAction('WATCH', CAP, { fg: 45, vix: 30, skew: 140, signalsActive: 1 })).not.toContain('VIG');
+    expect(formatBuyAction('WATCH', CAP, { fg: 45, vix: 30, skew: 140, signalsActive: 1 })).not.toContain('GLDM');
   });
 
   it('F&G を渡さない呼び出しは従来どおり（全部を主力へ）', () => {
