@@ -104,17 +104,18 @@ describe('戻りは QQQ・XLK・SMH・COPX・SPHB の5等分（2026-11-26）', (
   });
 });
 
-describe('守りは VIG・XLV・XLP・GLDM の4等分（2026-11-26）', () => {
-  it('守りの目安額を4本に等分する', () => {
+describe('守りは VIG・XLV・XLP・GLDM・TLT の5等分（2026-11-26）', () => {
+  it('守りの目安額を5本に等分する', () => {
     // GLDM は11/25の終値 70.69ドル × 159.18円。
-    const p = planOrder(300000, { def: 240000 }, { VIG: 37371, XLV: 28111, XLP: 14346, GLDM: 11252 });
+    const p = planOrder(300000, { def: 300000 }, { VIG: 37371, XLV: 28111, XLP: 14346, GLDM: 11252, TLT: 13091 });
     expect(p.etfs.map(l => [l.ticker, l.targetYen])).toEqual([
-      ['VIG', 60000], ['XLV', 60000], ['XLP', 60000], ['GLDM', 60000],
+      ['VIG', 60000], ['XLV', 60000], ['XLP', 60000], ['GLDM', 60000], ['TLT', 60000],
     ]);
     expect(p.etfs.find(l => l.ticker === 'GLDM')!.shares).toBe(5);
+    expect(p.etfs.find(l => l.ticker === 'TLT')!.shares).toBe(5);
   });
-  it('守りの目安が1本6,250円でも GLDM は1株買える（GLD だと0株で VYM に回っていた）', () => {
-    const p = planOrder(25000, { def: 25000 }, { VIG: 38687, XLV: 29240, XLP: 14693, GLDM: 11252 });
+  it('守りの目安が1本6,250円なら GLDM は1株買える（GLD だと0株で VYM に回っていた）', () => {
+    const p = planOrder(31250, { def: 31250 }, { VIG: 38687, XLV: 29240, XLP: 14693, GLDM: 11252, TLT: 13091 });
     expect(p.etfs.find(l => l.ticker === 'GLDM')!.shares).toBe(1);
   });
 });
@@ -126,7 +127,7 @@ describe('formatSharesForSlack', () => {
     expect(s).toContain('1回30,000円・同じ注文を3回');
     expect(s).toContain('`VT` 1株  22,529円');
     expect(s).toContain('投信 楽天・VYM');
-    expect(s).toContain('0株：VIG・XLV・XLP・GLDM・QQQ・XLK・SMH・COPX・SPHB');
+    expect(s).toContain('0株：VIG・XLV・XLP・GLDM・TLT・QQQ・XLK・SMH・COPX・SPHB');
   });
   it('買わないフェーズは何も足さない', () => {
     expect(formatSharesForSlack('NEUTRAL', 300000, 50, prices, 'x')).toBeNull();

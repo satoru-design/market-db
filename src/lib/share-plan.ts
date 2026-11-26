@@ -17,11 +17,14 @@ export const ETF_PLAN: Record<Bucket, { ticker: string; weight: number }[]> = {
   //  2007-11・2008-01 の下げの入口でも -12%・-20%（XLP -25%・-28%）だった。株と違う値動きをする唯一の1本。
 //  同日 小池「GLDMに替える」→ 買うのは GLDM。GLD は1株約52,100円で、守りの目安が1本6,250円の時に0株になり
 //  VYMに回って金の値動きにならなかった。GLDM は同じ金で1株約11,250円・経費率0.10%（GLD は0.40%）。
+// 同日 小池「TLTも守りの候補に入れて」→ 5等分。TLT（米国債20年超）は普段の暴落の1年後は中央値-4%で負けるが、
+//  2007-11・2008-01 の下げの入口では +1%・-2% で5本の中で一番浅い。長い下げ相場だけに効く保険。
   def: [
-    { ticker: 'VIG', weight: 1 / 4 },
-    { ticker: 'XLV', weight: 1 / 4 },
-    { ticker: 'XLP', weight: 1 / 4 },
-    { ticker: 'GLDM', weight: 1 / 4 },
+    { ticker: 'VIG', weight: 1 / 5 },
+    { ticker: 'XLV', weight: 1 / 5 },
+    { ticker: 'XLP', weight: 1 / 5 },
+    { ticker: 'GLDM', weight: 1 / 5 },
+    { ticker: 'TLT', weight: 1 / 5 },
   ],
   // 2026-11-26 小池「XLK・QQQ・SMHも残す」→ 戻りを3等分。重ならない8回で測ると3本はほぼ横並びで、
   //  どれか1本に絞る根拠が無かった（根拠の数字は fg-stages.ts の SLEEVES.rebound）。
