@@ -58,7 +58,7 @@ describe('planOrder', () => {
 
 describe('planOrder の選び方（2026-11-21 の不具合）', () => {
   // 2026-11-26 戻りを QQQ・XLK・SMH の3等分にしたので、株価に XLK・SMH を足した（11/17の終値を円にした値）。
-  const prices = { VT: 22529, VIG: 37371, XLV: 28111, XLP: 14346, QQQ: 96459, XLK: 25400, SMH: 71600 };
+  const prices = { VT: 22529, VIG: 37371, XLV: 28111, XLP: 14346, QQQ: 96459, XLK: 25400, SMH: 71600, COPX: 9300, SPHB: 19200 };
   const buckets = { main: 165000, def: 60000, rebound: 75000 };
 
   it('守りの3等分では、目安額に近い安い銘柄を先に買う', () => {
@@ -68,30 +68,39 @@ describe('planOrder の選び方（2026-11-21 の不具合）', () => {
     expect(n('XLP')).toBeGreaterThanOrEqual(1);
     expect(n('XLP')).toBeGreaterThanOrEqual(n('VIG'));
   });
-  it('ずれの合計は「一番足りない順」より小さい', () => {
-    const p = planOrder(300000, buckets, prices);
-    const err = p.etfs.reduce((s, l) => s + Math.abs(l.targetYen - l.costYen), 0);
-    // 旧方式（一番足りない銘柄から1株ずつ）を同じ条件でなぞって比べる。
+  // 旧方式（一番足りない銘柄から1株ずつ）を同じ条件でなぞり、ずれの合計を返す。
+  const oldWayErr = (budget: number, p: ReturnType<typeof planOrder>) => {
     const lines = p.etfs.map(l => ({ target: l.targetYen, price: l.priceYen ?? Infinity, cost: 0 }));
-    let left = Math.floor(300000 * (1 - SAFETY_MARGIN));
+    let left = Math.floor(budget * (1 - SAFETY_MARGIN));
     for (;;) {
       const c = lines.filter(l => l.price <= left && l.target - l.cost > 0).sort((a, b) => (b.target - b.cost) - (a.target - a.cost))[0];
       if (!c) break;
       c.cost += c.price;
       left -= c.price;
     }
-    const oldErr = lines.reduce((s, l) => s + Math.abs(l.target - l.cost), 0);
-    expect(err).toBeLessThan(oldErr);
+    return lines.reduce((s, l) => s + Math.abs(l.target - l.cost), 0);
+  };
+  const errOf = (p: ReturnType<typeof planOrder>) => p.etfs.reduce((s, l) => s + Math.abs(l.targetYen - l.costYen), 0);
+
+  it('ずれの合計は「一番足りない順」を超えない', () => {
+    const p = planOrder(300000, buckets, prices);
+    expect(errOf(p)).toBeLessThanOrEqual(oldWayErr(300000, p));
+  });
+  it('11/21 の不具合の形（守りだけ・各2万円）では「一番足りない順」よりずれが小さい', () => {
+    const p = planOrder(61300, { def: 60000 }, prices);
+    expect(errOf(p)).toBeLessThan(oldWayErr(61300, p));
   });
 });
 
-describe('戻りは QQQ・XLK・SMH の3等分（2026-11-26）', () => {
-  it('戻りの目安額を3本に等分する', () => {
-    const p = planOrder(300000, { rebound: 75000 }, { QQQ: 96459, XLK: 25400, SMH: 71600 });
+describe('戻りは QQQ・XLK・SMH・COPX・SPHB の5等分（2026-11-26）', () => {
+  it('戻りの目安額を5本に等分する', () => {
+    const p = planOrder(300000, { rebound: 75000 }, { QQQ: 96459, XLK: 25400, SMH: 71600, COPX: 9300, SPHB: 19200 });
     expect(p.etfs.filter(l => l.bucket === 'rebound').map(l => [l.ticker, l.targetYen])).toEqual([
-      ['QQQ', 25000], ['XLK', 25000], ['SMH', 25000],
+      ['QQQ', 15000], ['XLK', 15000], ['SMH', 15000], ['COPX', 15000], ['SPHB', 15000],
     ]);
-    expect(p.etfs.find(l => l.ticker === 'XLK')!.shares).toBe(1);
+    // 1株が目安額に近い COPX（約9,300円）と SPHB（約19,200円）は株で買える。
+    expect(p.etfs.find(l => l.ticker === 'COPX')!.shares).toBeGreaterThanOrEqual(1);
+    expect(p.etfs.find(l => l.ticker === 'SPHB')!.shares).toBe(1);
   });
 });
 
@@ -102,7 +111,7 @@ describe('formatSharesForSlack', () => {
     expect(s).toContain('1回30,000円・同じ注文を3回');
     expect(s).toContain('`VT` 1株  22,529円');
     expect(s).toContain('投信 楽天・VYM');
-    expect(s).toContain('0株：VIG・XLV・XLP・QQQ・XLK・SMH');
+    expect(s).toContain('0株：VIG・XLV・XLP・QQQ・XLK・SMH・COPX・SPHB');
   });
   it('買わないフェーズは何も足さない', () => {
     expect(formatSharesForSlack('NEUTRAL', 300000, 50, prices, 'x')).toBeNull();

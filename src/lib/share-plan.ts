@@ -20,10 +20,14 @@ export const ETF_PLAN: Record<Bucket, { ticker: string; weight: number }[]> = {
   ],
   // 2026-11-26 小池「XLK・QQQ・SMHも残す」→ 戻りを3等分。重ならない8回で測ると3本はほぼ横並びで、
   //  どれか1本に絞る根拠が無かった（根拠の数字は fg-stages.ts の SLEEVES.rebound）。
+  // 同日 小池「COPXとSPHBも候補に入れて」→ 5等分。COPX（銅鉱山）と SPHB（S&P500の高β100社）は
+  //  ハイテク以外から戻りを取る候補。ただし上場が新しく、重ならない回は6回・5回しか測れていない。
   rebound: [
-    { ticker: 'QQQ', weight: 1 / 3 },
-    { ticker: 'XLK', weight: 1 / 3 },
-    { ticker: 'SMH', weight: 1 / 3 },
+    { ticker: 'QQQ', weight: 1 / 5 },
+    { ticker: 'XLK', weight: 1 / 5 },
+    { ticker: 'SMH', weight: 1 / 5 },
+    { ticker: 'COPX', weight: 1 / 5 },
+    { ticker: 'SPHB', weight: 1 / 5 },
   ],
   leverage: [
     { ticker: 'SPXL', weight: 0.5 },

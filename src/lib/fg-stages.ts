@@ -57,9 +57,9 @@ export const SLEEVES: Record<Sleeve, { label: string; role: string; etf: string;
   rebound: {
     label: '戻り',
     role: 'V字の戻りを取る',
-    etf: 'QQQ・XLK・SMH を3等分',
+    etf: 'QQQ・XLK・SMH・COPX・SPHB を5等分',
     fund: 'NASDAQ100に連動する投信',
-    basis: '翌営業日に買って1年後（円・重ならない8回）の中央値 QQQ +6%・XLK +7%・SMH +7%、最悪 -25%・-23%・-28%。3本ほぼ横並び。ただし2000年4月に QQQ を買うと-65%',
+    basis: '翌営業日に買って1年後（円・重ならない回）の中央値／最悪 QQQ +6%／-25%・XLK +7%／-23%・SMH +7%／-28%（各8回）、COPX +10%／-22%（6回）・SPHB +3%／-3%（5回）。COPX と SPHB は回数が少なく確かさが落ちる。2000年4月に QQQ を買うと-65%',
   },
 };
 
