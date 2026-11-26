@@ -91,7 +91,7 @@ export const DEPLOY: Record<Phase, { core: number; leverage: number }> = {
 
 export const CORE_TICKERS = '`VT` `VTI` ／ 投信: オルカン / eMAXIS Slim S&P500';
 export const DEF_TICKERS = '`VIG` `XLV` `XLP` を3等分（`XLV` の代わりに `VHT` でも可）／ 投信: 楽天・VYM';
-export const REBOUND_TICKERS = '`QQQ` ／ 投信: NASDAQ100に連動するもの';
+export const REBOUND_TICKERS = '`QQQ` `XLK` `SMH` を3等分 ／ 投信: NASDAQ100に連動するもの';
 const LEV_TICKERS = '`SPXL` `TQQQ`';
 
 const KNIFE =

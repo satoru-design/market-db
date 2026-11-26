@@ -18,7 +18,13 @@ export const ETF_PLAN: Record<Bucket, { ticker: string; weight: number }[]> = {
     { ticker: 'XLV', weight: 1 / 3 },
     { ticker: 'XLP', weight: 1 / 3 },
   ],
-  rebound: [{ ticker: 'QQQ', weight: 1 }],
+  // 2026-11-26 小池「XLK・QQQ・SMHも残す」→ 戻りを3等分。重ならない8回で測ると3本はほぼ横並びで、
+  //  どれか1本に絞る根拠が無かった（根拠の数字は fg-stages.ts の SLEEVES.rebound）。
+  rebound: [
+    { ticker: 'QQQ', weight: 1 / 3 },
+    { ticker: 'XLK', weight: 1 / 3 },
+    { ticker: 'SMH', weight: 1 / 3 },
+  ],
   leverage: [
     { ticker: 'SPXL', weight: 0.5 },
     { ticker: 'TQQQ', weight: 0.5 },
